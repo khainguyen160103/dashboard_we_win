@@ -1,236 +1,187 @@
+import { useState } from "react";
+import { Button, Card, Flex, Input, Statistic, message } from "antd";
+import { PlusOutlined, SearchOutlined, RocketOutlined, CheckCircleOutlined, ClockCircleOutlined, DollarOutlined } from "@ant-design/icons";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import ComponentCard from "../components/common/ComponentCard";
+
+import {
+  CampaignTable,
+  CampaignFormModal,
+  CampaignDetailDrawer,
+  initialMockCampaigns,
+  formatVND,
+} from "../features/campaign";
+
+import type {
+  Campaign,
+  CampaignFormValues,
+} from "../features/campaign";
 
 export default function CampaignManagement() {
-  const campaigns = [
-    {
-      id: 1,
-      name: "Summer Sale 2024",
-      status: "Active",
-      startDate: "2024-06-01",
-      endDate: "2024-08-31",
-      budget: 25000,
-      spent: 18500,
-      videos: 120,
-      approved: 115,
-    },
-    {
-      id: 2,
-      name: "Back to School",
-      status: "Active",
-      startDate: "2024-07-15",
-      endDate: "2024-09-15",
-      budget: 30000,
-      spent: 22000,
-      videos: 150,
-      approved: 142,
-    },
-    {
-      id: 3,
-      name: "Holiday Special",
-      status: "Scheduled",
-      startDate: "2024-11-01",
-      endDate: "2024-12-25",
-      budget: 50000,
-      spent: 0,
-      videos: 0,
-      approved: 0,
-    },
-    {
-      id: 4,
-      name: "Flash Deal Week",
-      status: "Completed",
-      startDate: "2024-05-01",
-      endDate: "2024-05-07",
-      budget: 15000,
-      spent: 15000,
-      videos: 85,
-      approved: 85,
-    },
-    {
-      id: 5,
-      name: "New Product Launch",
-      status: "Active",
-      startDate: "2024-06-20",
-      endDate: "2024-10-20",
-      budget: 40000,
-      spent: 28000,
-      videos: 200,
-      approved: 190,
-    },
-  ];
+  const [campaignsList, setCampaignsList] = useState<Campaign[]>(initialMockCampaigns);
+  const [searchText, setSearchText] = useState("");
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "Scheduled":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "Completed":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
-      default:
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    }
+  // Modals state
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+
+  // Drawer state
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+
+  // Handlers
+  const handleOpenCreate = () => {
+    setEditingCampaign(null);
+    setFormModalOpen(true);
   };
+
+  const handleOpenEdit = (campaign: Campaign) => {
+    setEditingCampaign(campaign);
+    setFormModalOpen(true);
+  };
+
+  const handleOpenDetail = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setDetailDrawerOpen(true);
+  };
+
+  const handleSubmitForm = (values: CampaignFormValues) => {
+    const [startDate, endDate] = values.dateRange;
+
+    if (editingCampaign) {
+      const updatedList = campaignsList.map((c) =>
+        c.id === editingCampaign.id
+          ? {
+              ...c,
+              name: values.name,
+              description: values.description,
+              brandName: values.brandName,
+              category: values.category,
+              budget: values.budget,
+              status: values.status,
+              startDate,
+              endDate,
+            }
+          : c
+      );
+      setCampaignsList(updatedList);
+      message.success(`Đã cập nhật chiến dịch "${values.name}"!`);
+    } else {
+      const newCampaign: Campaign = {
+        id: Date.now(),
+        name: values.name,
+        description: values.description,
+        brandName: values.brandName,
+        category: values.category,
+        budget: values.budget,
+        spent: 0,
+        status: values.status,
+        startDate,
+        endDate,
+        kocs: [],
+      };
+      setCampaignsList([newCampaign, ...campaignsList]);
+      message.success(`Đã tạo chiến dịch mới "${values.name}"!`);
+    }
+
+    setFormModalOpen(false);
+    setEditingCampaign(null);
+  };
+
+  const handleDeleteCampaign = (id: number) => {
+    setCampaignsList((prev) => prev.filter((c) => c.id !== id));
+    message.success("Đã xóa chiến dịch!");
+  };
+
+  const handleUpdateCampaignInDrawer = (updated: Campaign) => {
+    setCampaignsList((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    setSelectedCampaign(updated);
+  };
+
+  // Filtered campaigns
+  const filteredCampaigns = campaignsList.filter(
+    (c) =>
+      !searchText ||
+      c.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      (c.brandName && c.brandName.toLowerCase().includes(searchText.toLowerCase())) ||
+      (c.category && c.category.toLowerCase().includes(searchText.toLowerCase()))
+  );
+
+  // Top summary metrics
+  const activeCount = campaignsList.filter((c) => c.status === "Active").length;
+  const totalBudget = campaignsList.reduce((sum, c) => sum + c.budget, 0);
+  const totalKocsInvited = campaignsList.reduce((sum, c) => sum + c.kocs.length, 0);
 
   return (
     <>
-      <PageMeta
-        title="Quản lý chiến dịch"
-        description="Trang quản lý chiến dịch với mock data demo"
-      />
+      <PageMeta title="Quản lý chiến dịch" description="Trang quản lý chiến dịch và quy trình mời KOC" />
       <PageBreadcrumb pageTitle="Quản lý chiến dịch" />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-        {[
-          { title: "Tổng chiến dịch", value: "48", tone: "bg-sky-50 dark:bg-sky-900/20" },
-          { title: "Đang chạy", value: "15", tone: "bg-teal-50 dark:bg-teal-900/20" },
-          { title: "Sắp khởi động", value: "7", tone: "bg-amber-50 dark:bg-amber-900/20" },
-          { title: "Đã hoàn thành", value: "26", tone: "bg-slate-50 dark:bg-slate-800/60" },
-        ].map((metric) => (
-          <div
-            key={metric.title}
-            className={`rounded-2xl border border-gray-200 p-5 ${metric.tone} dark:border-gray-800`}
-          >
-            <p className="text-sm text-gray-600 dark:text-gray-400">{metric.title}</p>
-            <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">
-              {metric.value}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mb-6 flex gap-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Tìm kiếm chiến dịch..."
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+      {/* Overview Cards */}
+      <Flex gap={16} style={{ marginBottom: 24 }}>
+        <Card size="small" style={{ flex: 1 }}>
+          <Statistic title="Tổng Chiến Dịch" value={campaignsList.length} prefix={<RocketOutlined />} />
+        </Card>
+        <Card size="small" style={{ flex: 1 }}>
+          <Statistic
+            title="Đang Hoạt Động"
+            value={activeCount}
+            valueStyle={{ color: "#52c41a" }}
+            prefix={<CheckCircleOutlined />}
           />
-        </div>
-        <button className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
-          + Tạo Chiến Dịch
-        </button>
-      </div>
+        </Card>
+        <Card size="small" style={{ flex: 1 }}>
+          <Statistic title="Tổng KOC Tham Gia" value={totalKocsInvited} prefix={<ClockCircleOutlined />} />
+        </Card>
+        <Card size="small" style={{ flex: 1.2 }}>
+          <Statistic
+            title="Tổng Ngân Sách"
+            value={formatVND(totalBudget)}
+            valueStyle={{ color: "#1890ff", fontSize: 18 }}
+            prefix={<DollarOutlined />}
+          />
+        </Card>
+      </Flex>
 
-      <ComponentCard
-        title="Danh Sách Chiến Dịch"
-        desc="Theo dõi ngân sách, thời gian và tiến độ của từng campaign"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-800">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Tên Chiến Dịch
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Trạng Thái
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Thời Gian
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Budget
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Video
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Tiến độ
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Hành Động
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.map((campaign) => (
-                <tr
-                  key={campaign.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50"
-                >
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                    {campaign.name}
-                  </td>
-                  <td className="px-4 py-4 text-sm">
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeColor(
-                        campaign.status
-                      )}`}
-                    >
-                      {campaign.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    <div className="text-xs">
-                      {new Date(campaign.startDate).toLocaleDateString(
-                        "vi-VN"
-                      )}{" "}
-                      -{" "}
-                      {new Date(campaign.endDate).toLocaleDateString(
-                        "vi-VN"
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    <div>
-                      ${campaign.spent.toLocaleString()} /{" "}
-                      ${campaign.budget.toLocaleString()}
-                    </div>
-                    <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                      <div
-                        className="h-full bg-brand-500"
-                        style={{
-                          width: `${(campaign.spent / campaign.budget) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    <div>
-                      {campaign.approved}/{campaign.videos}
-                    </div>
-                    <div className="text-xs text-green-600 dark:text-green-400">
-                      {campaign.videos > 0
-                        ? (
-                            ((campaign.approved / campaign.videos) * 100).toFixed(
-                              0
-                            ) + "%"
-                          )
-                        : "N/A"}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-3">
-                      <div className="h-2.5 w-32 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                        <div
-                          className="h-full rounded-full bg-teal-500"
-                          style={{ width: `${(campaign.spent / campaign.budget) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                        {Math.round((campaign.spent / campaign.budget) * 100)}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-sm">
-                    <div className="flex gap-2">
-                      <button className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                        Chi Tiết
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
-                        Sửa
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </ComponentCard>
+      {/* Toolbar */}
+      <Flex justify="space-between" align="center" style={{ marginBottom: 20 }}>
+        <Input
+          placeholder="Tìm kiếm chiến dịch theo tên, nhãn hàng, ngành hàng..."
+          prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+          style={{ width: 340 }}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          allowClear
+        />
+
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+          + Tạo Chiến Dịch Mới
+        </Button>
+      </Flex>
+
+      {/* Main Campaign Table */}
+      <CampaignTable
+        campaigns={filteredCampaigns}
+        onViewDetail={handleOpenDetail}
+        onEdit={handleOpenEdit}
+        onDelete={handleDeleteCampaign}
+      />
+
+      {/* Form Modal (Create / Edit Campaign) */}
+      <CampaignFormModal
+        open={formModalOpen}
+        editingCampaign={editingCampaign}
+        onClose={() => setFormModalOpen(false)}
+        onSubmit={handleSubmitForm}
+      />
+
+      {/* Detail & KOC Pipeline Drawer */}
+      <CampaignDetailDrawer
+        open={detailDrawerOpen}
+        campaign={selectedCampaign}
+        onClose={() => setDetailDrawerOpen(false)}
+        onUpdateCampaign={handleUpdateCampaignInDrawer}
+      />
     </>
   );
 }

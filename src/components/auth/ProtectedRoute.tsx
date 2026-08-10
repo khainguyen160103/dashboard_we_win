@@ -1,9 +1,9 @@
-import { Navigate, useLocation } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import type { ReactNode } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 
 type ProtectedRouteProps = {
-  children: ReactNode;
+  children?: ReactNode;
   requireAdmin?: boolean;
 };
 
@@ -22,5 +22,5 @@ export default function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  return children ? <>{children}</> : <Outlet />;
 }

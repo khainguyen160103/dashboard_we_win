@@ -1,12 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import UserManagement from "./pages/UserManagement";
 import CampaignManagement from "./pages/CampaignManagement";
 import JobReview from "./pages/JobReview";
 import KPIDashboard from "./pages/KPIDashboard";
+import KOCManagement from "./pages/KOCManagement";
 import PermissionManagement from "./pages/PermissionManagement";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
@@ -22,7 +22,6 @@ import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminPage from "./pages/Admin/AdminPage";
 
@@ -32,16 +31,22 @@ export default function App() {
       <Router>
         <ScrollToTop />
         <Routes>
-          {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+          {/* Dashboard Layout (Protected) */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index path="/" element={<KPIDashboard />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
-            <Route path="/kpi" element={<KPIDashboard />} />
             <Route path="/user-management" element={<UserManagement />} />
+            <Route path="/koc-management" element={<KOCManagement />} />
             <Route path="/campaign-management" element={<CampaignManagement />} />
             <Route path="/job-review" element={<JobReview />} />
             <Route path="/permission-management" element={<PermissionManagement />} />
@@ -76,7 +81,7 @@ export default function App() {
 
           {/* Auth Layout */}
           <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />

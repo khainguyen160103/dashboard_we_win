@@ -1,46 +1,43 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
-import { useAuth } from "../../context/AuthContext";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
-import Input from "../form/input/InputField";
-import Checkbox from "../form/input/Checkbox";
-import Button from "../ui/button/Button";
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
+import { Button, Form, Input, message } from 'antd';
+import { loginRequest } from "../../model/User";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function SignInForm() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("password");
-  const [error, setError] = useState("");
-  const { login } = useAuth();
+  const { control, handleSubmit, formState: { errors } } = useForm<loginRequest>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const { loginAsync, isLoggingIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
+  const [showPassword, setShowPassword] = useState(false);
 
-    const user = login(email, password);
-
-    if (!user) {
-      setError("Invalid email or password. Try admin@example.com / password.");
-      return;
+  const onSubmit: SubmitHandler<loginRequest> = async (data) => {
+    try {
+      await loginAsync(data);
+      message.success("Logged in successfully!");
+      const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Login failed. Please try again.";
+      message.error(msg);
     }
-
-    navigate(user.role === "admin" ? "/admin" : "/");
   };
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="w-full max-w-md pt-10 mx-auto">
-        <Link
-          to="/"
-          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-        >
-          <ChevronLeftIcon className="size-5" />
-          Back to dashboard
-        </Link>
-      </div>
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
@@ -52,28 +49,53 @@ export default function SignInForm() {
             </p>
           </div>
           <div>
-            <form onSubmit={handleSubmit}>
+            <Form onFinish={handleSubmit(onSubmit)} layout="vertical">
               <div className="space-y-6">
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input
-                    placeholder="info@gmail.com"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                  <Controller
+                    control={control}
+                    name="email"
+                    rules={{ required: "Please enter your email" }}
+                    render={({ field }) => (
+                      <Form.Item
+                        validateStatus={errors.email ? "error" : ""}
+                        help={errors.email?.message}
+                        className="mb-0"
+                      >
+                        <Input
+                          {...field}
+                          placeholder="example@gmail.com"
+                        />
+                      </Form.Item>
+                    )}
                   />
                 </div>
+
                 <div>
                   <Label>
                     Password <span className="text-error-500">*</span>{" "}
                   </Label>
                   <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
+                    <Controller
+                      control={control}
+                      name="password"
+                      rules={{ required: "Please enter your password" }}
+                      render={({ field }) => (
+                        <Form.Item
+                          validateStatus={errors.password ? "error" : ""}
+                          help={errors.password?.message}
+                          className="mb-0"
+                        >
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                          />
+                        </Form.Item>
+                      )}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -87,45 +109,20 @@ export default function SignInForm() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox checked={isChecked} onChange={setIsChecked} />
-                    <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
-                      Keep me logged in
-                    </span>
-                  </div>
-                  <Link
-                    to="/reset-password"
-                    className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                {error ? (
-                  <p className="text-sm text-error-500">{error}</p>
-                ) : null}
+
                 <div>
-                  <Button className="w-full" size="sm" type="submit">
-                    Sign in
-                  </Button>
+                  <Form.Item label={null}>
+                    <Button type="primary" htmlType="submit" loading={isLoggingIn} className="w-full">
+                      Sign in
+                    </Button>
+                  </Form.Item>
                 </div>
               </div>
-            </form>
-
-            <div className="mt-5">
-              <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                Don&apos;t have an account? {""}
-                <Link
-                  to="/signup"
-                  className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                >
-                  Sign Up
-                </Link>
-              </p>
-            </div>
+            </Form>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

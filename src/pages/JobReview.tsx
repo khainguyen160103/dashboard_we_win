@@ -1,232 +1,231 @@
+import { useState, useMemo } from "react";
+import { Card, Flex, Radio, Space, Tag, message } from "antd";
+import { UserOutlined, SolutionOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import ComponentCard from "../components/common/ComponentCard";
+import { useAuthStore } from "../hooks/store/useAuthStore";
+import { initialMockKOCs } from "../features/koc/koc.data";
+
+import {
+  JobPMView,
+  JobKOCView,
+  PMReviewModal,
+  UploadVideoModal,
+  KOCInfoModal,
+  loadJobs,
+  saveJobs,
+} from "../features/job";
+
+import type {
+  JobRecord,
+  PMReviewFormValues,
+  KOCUploadFormValues,
+  RoleType,
+} from "../features/job";
+
+type RBACMode = "AUTO" | "PM" | "KOC";
 
 export default function JobReview() {
-  const jobs = [
-    {
-      id: 1,
-      title: "Create Social Media Content",
-      campaign: "Summer Sale 2024",
-      submittedBy: "Nguyen Van A",
-      status: "Approved",
-      submittedDate: "2024-06-15",
-      approvedDate: "2024-06-16",
-      quality: "Excellent",
-    },
-    {
-      id: 2,
-      title: "Product Review Video",
-      campaign: "New Product Launch",
-      submittedBy: "Tran Thi B",
-      status: "Pending",
-      submittedDate: "2024-07-10",
-      approvedDate: null,
-      quality: "Good",
-    },
-    {
-      id: 3,
-      title: "Unboxing Video",
-      campaign: "Back to School",
-      submittedBy: "Le Van C",
-      status: "Rejected",
-      submittedDate: "2024-07-08",
-      approvedDate: "2024-07-09",
-      quality: "Poor",
-    },
-    {
-      id: 4,
-      title: "Tutorial Video",
-      campaign: "Holiday Special",
-      submittedBy: "Pham Thi D",
-      status: "Pending",
-      submittedDate: "2024-07-12",
-      approvedDate: null,
-      quality: "Excellent",
-    },
-    {
-      id: 5,
-      title: "Customer Testimonial",
-      campaign: "Summer Sale 2024",
-      submittedBy: "Hoang Van E",
-      status: "Approved",
-      submittedDate: "2024-07-05",
-      approvedDate: "2024-07-06",
-      quality: "Excellent",
-    },
-    {
-      id: 6,
-      title: "Behind The Scenes",
-      campaign: "New Product Launch",
-      submittedBy: "Vu Thi F",
-      status: "Pending",
-      submittedDate: "2024-07-11",
-      approvedDate: null,
-      quality: "Good",
-    },
-  ];
+  const user = useAuthStore((state) => state.user);
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "Rejected":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
-    }
+  // Determine user's real role from Zustand / JWT
+  const detectedRole = useMemo<RoleType>(() => {
+    if (!user) return "PM"; // Default fallback if guest/demo
+    const roles = (user.roles || []).map((r) => r.toUpperCase());
+    const isKOC = roles.some((r) => r.includes("KOC")) || user.email?.toLowerCase().includes("koc");
+    return isKOC ? "KOC" : "PM";
+  }, [user]);
+
+  // Find matching KOC ID if logged-in user is a KOC
+  const loggedInKocId = useMemo<number>(() => {
+    if (!user) return 1; // Default to Linh Barbie for demo
+    const found = initialMockKOCs.find(
+      (k) => k.email.toLowerCase() === user.email.toLowerCase() || k.name.toLowerCase() === user.fullName?.toLowerCase()
+    );
+    return found ? found.id : 1;
+  }, [user]);
+
+  // RBAC mode: "AUTO" (strictly follows auth), "PM", or "KOC"
+  const [rbacMode, setRbacMode] = useState<RBACMode>("AUTO");
+  const [activeKocId, setActiveKocId] = useState<number>(loggedInKocId);
+
+  // Effective role based on mode
+  const effectiveRole: RoleType = rbacMode === "AUTO" ? detectedRole : rbacMode;
+
+  // Jobs state with persistence
+  const [jobsList, setJobsList] = useState<JobRecord[]>(loadJobs);
+
+  // Modals state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [kocModalOpen, setKocModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<JobRecord | null>(null);
+
+  // ── PM Review Handler ──
+  const handleOpenReviewModal = (job: JobRecord) => {
+    setSelectedJob(job);
+    setReviewModalOpen(true);
   };
 
-  const getQualityColor = (quality: string) => {
-    switch (quality) {
-      case "Excellent":
-        return "text-green-600 dark:text-green-400";
-      case "Good":
-        return "text-blue-600 dark:text-blue-400";
-      case "Poor":
-        return "text-red-600 dark:text-red-400";
-      default:
-        return "text-gray-600 dark:text-gray-400";
-    }
+  const handleSubmitPMReview = (values: PMReviewFormValues) => {
+    if (!selectedJob) return;
+
+    const updated = jobsList.map((j) => {
+      if (j.id === selectedJob.id) {
+        return {
+          ...j,
+          status: values.status,
+          quality: values.quality,
+          pmFeedback: values.pmFeedback,
+          approvedDate: values.status === "Approved" ? new Date().toISOString().split("T")[0] : j.approvedDate,
+        };
+      }
+      return j;
+    });
+
+    setJobsList(updated);
+    saveJobs(updated);
+    message.success(
+      values.status === "Approved"
+        ? `Đã phê duyệt Video của ${selectedJob.kocName}!`
+        : `Đã phản hồi yêu cầu sửa video cho ${selectedJob.kocName}!`
+    );
+    setReviewModalOpen(false);
+    setSelectedJob(null);
+  };
+
+  // ── KOC Upload Handler ──
+  const handleOpenUploadModal = (job: JobRecord) => {
+    setSelectedJob(job);
+    setUploadModalOpen(true);
+  };
+
+  const handleSubmitKOCUpload = (values: KOCUploadFormValues) => {
+    if (!selectedJob) return;
+
+    const updated = jobsList.map((j) => {
+      if (j.id === selectedJob.id) {
+        return {
+          ...j,
+          title: values.title,
+          description: values.description,
+          videoUrl: values.videoUrl,
+          status: "Pending" as const,
+          submittedDate: new Date().toISOString().split("T")[0],
+        };
+      }
+      return j;
+    });
+
+    setJobsList(updated);
+    saveJobs(updated);
+    message.success(`Đã gửi Video cho PM duyệt!`);
+    setUploadModalOpen(false);
+    setSelectedJob(null);
+  };
+
+  // ── KOC Info Handler ──
+  const handleOpenKocModal = (job: JobRecord) => {
+    setSelectedJob(job);
+    setKocModalOpen(true);
   };
 
   return (
     <>
       <PageMeta
-        title="Quản lý Job & Duyệt Video"
-        description="Trang quản lý job và duyệt video bằng mock data"
+        title="Quản lý Job & Phê duyệt Video (RBAC)"
+        description="Trang quản lý Job và duyệt video tự động phân quyền theo Auth Role PM / KOC"
       />
-      <PageBreadcrumb pageTitle="Quản lý Job & Duyệt Video" />
+      <PageBreadcrumb pageTitle="Quản lý Job & Phê duyệt Video" />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-sky-50 p-4 dark:border-gray-800 dark:bg-sky-900/20">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Chưa Duyệt
-          </p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            24
-          </p>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-green-50 p-4 dark:border-gray-800 dark:bg-green-900/20">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Đã Duyệt
-          </p>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            156
-          </p>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-red-50 p-4 dark:border-gray-800 dark:bg-red-900/20">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Bị Từ Chối
-          </p>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-            8
-          </p>
-        </div>
-      </div>
+      {/* RBAC Auth & Control Card */}
+      <Card size="small" style={{ marginBottom: 20, background: "#fafafa" }}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
+          <Space size={12}>
+            <SafetyCertificateOutlined style={{ fontSize: 20, color: "#1890ff" }} />
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13 }}>
+                Phân quyền người dùng (RBAC):{" "}
+                <Tag color={detectedRole === "PM" ? "blue" : "green"}>
+                  {user ? `User: ${user.fullName || user.username} (${user.roles?.join(", ") || detectedRole})` : `Giao diện Demo (${detectedRole})`}
+                </Tag>
+              </div>
+              <div style={{ fontSize: 12, color: "#8c8c8c" }}>
+                {effectiveRole === "PM"
+                  ? "Quyền PM: Được xem toàn bộ Job, thông tin KOC & thực hiện phê duyệt / chấm điểm video."
+                  : "Quyền KOC: Chỉ xem các Job của chiến dịch đã tham gia & nộp video bài đăng."}
+              </div>
+            </div>
+          </Space>
 
-      <div className="mb-6 flex gap-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Tìm kiếm job..."
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-          />
-        </div>
-        <select className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-          <option>Tất Cả Trạng Thái</option>
-          <option>Pending</option>
-          <option>Approved</option>
-          <option>Rejected</option>
-        </select>
-      </div>
+          {/* RBAC Mode Selector (Auto vs Manual Test override) */}
+          <Space align="center">
+            <span style={{ fontSize: 12, color: "#595959" }}>Chế độ hiển thị:</span>
+            <Radio.Group
+              value={rbacMode}
+              onChange={(e) => setRbacMode(e.target.value as RBACMode)}
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio.Button value="AUTO">
+                ⚡ Tự động theo Auth ({detectedRole})
+              </Radio.Button>
+              <Radio.Button value="PM">
+                <SolutionOutlined /> Xem giao diện PM
+              </Radio.Button>
+              <Radio.Button value="KOC">
+                <UserOutlined /> Xem giao diện KOC
+              </Radio.Button>
+            </Radio.Group>
+          </Space>
+        </Flex>
+      </Card>
 
-      <ComponentCard
-        title="Danh Sách Video"
-        desc="Duyệt video theo chiến dịch, người gửi và chất lượng nội dung"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-800">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Tên Video
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Chiến Dịch
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Người Gửi
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Trạng Thái
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Chất Lượng
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Ngày Gửi
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Hành Động
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((job) => (
-                <tr
-                  key={job.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50"
-                >
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                    {job.title}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {job.campaign}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {job.submittedBy}
-                  </td>
-                  <td className="px-4 py-4 text-sm">
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeColor(
-                        job.status
-                      )}`}
-                    >
-                      {job.status}
-                    </span>
-                  </td>
-                  <td className={`px-4 py-4 text-sm font-medium ${getQualityColor(job.quality)}`}>
-                    {job.quality}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(job.submittedDate).toLocaleDateString("vi-VN")}
-                  </td>
-                  <td className="px-4 py-4 text-sm">
-                    <div className="flex gap-2">
-                      {job.status === "Pending" && (
-                        <>
-                          <button className="text-green-600 hover:text-green-700 dark:text-green-400">
-                            Duyệt
-                          </button>
-                          <button className="text-red-600 hover:text-red-700 dark:text-red-400">
-                            Từ Chối
-                          </button>
-                        </>
-                      )}
-                      <button className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                        Xem
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </ComponentCard>
+      {/* RBAC Active View */}
+      {effectiveRole === "PM" ? (
+        <JobPMView
+          jobs={jobsList}
+          onOpenReviewModal={handleOpenReviewModal}
+          onOpenKocModal={handleOpenKocModal}
+        />
+      ) : (
+        <JobKOCView
+          jobs={jobsList}
+          activeKocId={activeKocId}
+          onChangeActiveKoc={setActiveKocId}
+          onOpenUploadModal={handleOpenUploadModal}
+        />
+      )}
+
+      {/* Modals */}
+      <PMReviewModal
+        open={reviewModalOpen}
+        job={selectedJob}
+        onClose={() => {
+          setReviewModalOpen(false);
+          setSelectedJob(null);
+        }}
+        onSubmit={handleSubmitPMReview}
+      />
+
+      <UploadVideoModal
+        open={uploadModalOpen}
+        job={selectedJob}
+        onClose={() => {
+          setUploadModalOpen(false);
+          setSelectedJob(null);
+        }}
+        onSubmit={handleSubmitKOCUpload}
+      />
+
+      <KOCInfoModal
+        open={kocModalOpen}
+        job={selectedJob}
+        onClose={() => {
+          setKocModalOpen(false);
+          setSelectedJob(null);
+        }}
+      />
     </>
   );
 }
