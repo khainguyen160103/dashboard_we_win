@@ -27,4 +27,21 @@ export const queryKeys = {
     details: () => [...queryKeys.permissions.all, "detail"] as const,
     detail: (id: number) => [...queryKeys.permissions.details(), id] as const,
   },
+  campaigns: {
+    all: ["campaigns"] as const,
+    lists: () => [...queryKeys.campaigns.all, "list"] as const,
+    list: (params?: { page?: number; limit?: number; q?: string; status?: string }) =>
+      [...queryKeys.campaigns.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.campaigns.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.campaigns.details(), id] as const,
+  },
+  jobs: {
+    all: ["jobs"] as const,
+    lists: () => [...queryKeys.jobs.all, "list"] as const,
+    list: (params?: { videoStatus?: string; invitationStatus?: string }) =>
+      [...queryKeys.jobs.lists(), params ?? {}] as const,
+    myJobs: () => [...queryKeys.jobs.all, "myJobs"] as const,
+    details: () => [...queryKeys.jobs.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.jobs.details(), id] as const,
+  },
 } as const;

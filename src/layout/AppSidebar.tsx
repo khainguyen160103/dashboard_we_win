@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation } from "react-router";
 
-// Assume these icons are imported from an icon library
 import {
   BoxCubeIcon,
   ChevronDownIcon,
@@ -12,50 +11,68 @@ import {
   LockIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import { useAuthStore } from "../hooks/store/useAuthStore";
+import { getActiveUserRole, RoleType } from "../utils/rbac";
 
 type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
+  roles?: RoleType[];
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/",
+    roles: ["ADMIN", "SALES", "PM", "KOC"],
   },
   {
     icon: <UserCircleIcon />,
     name: "Quản lý User",
     path: "/user-management",
+    roles: ["ADMIN"],
   },
   {
     icon: <UserCircleIcon />,
     name: "Quản lý KOC",
     path: "/koc-management",
+    roles: ["ADMIN", "SALES", "PM"],
   },
   {
     icon: <BoxCubeIcon />,
     name: "Quản lý chiến dịch",
     path: "/campaign-management",
+    roles: ["ADMIN", "SALES", "PM"],
   },
   {
     icon: <VideoIcon />,
     name: "Quản lý Job",
     path: "/job-review",
+    roles: ["ADMIN", "PM", "KOC"],
   },
   {
     icon: <LockIcon />,
     name: "Phân quyền người dùng",
     path: "/permission-management",
+    roles: ["ADMIN"],
   },
 ];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const user = useAuthStore((state) => state.user);
   const location = useLocation();
+
+  // Tự động kiểm tra role của người dùng đang đăng nhập
+  const activeRole = useMemo(() => getActiveUserRole(user), [user]);
+
+  // Lọc danh sách menu Sidebar tự động theo Role người dùng đã đăng nhập
+  const navItems = useMemo(() => {
+    return allNavItems.filter((item) => !item.roles || item.roles.includes(activeRole));
+  }, [activeRole]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -70,7 +87,6 @@ const AppSidebar: React.FC = () => {
     (path: string) => location.pathname === path,
     [location.pathname]
   );
-
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -273,25 +289,8 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
-            {/* <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(othersItems, "others")}
-            </div> */}
           </div>
         </nav>
-        {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
       </div>
     </aside>
   );

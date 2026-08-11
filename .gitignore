@@ -24,7 +24,6 @@ node_modules/
 *.sw?
 
 # Env files
-.env
 .env.local
 .env.development.local
 .env.test.local

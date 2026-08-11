@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import {
@@ -15,11 +15,30 @@ import {
   message,
 } from "antd";
 import type { TableColumnsType } from "antd";
+import {
+  useUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+} from "../hooks/useUser";
+import { useRolesQuery } from "../hooks/query/useRoleQuery";
+import type { User } from "../model/User";
+import type { Role } from "../model/Role";
+
+// Fallback roles array in case REST API is initializing
+const FALLBACK_ROLES: Role[] = [
+  { id: "a1000000-0000-0000-0000-000000000001", name: "Administrator", code: "ADMIN", description: "Full system access" },
+  { id: "a1000000-0000-0000-0000-000000000002", name: "PM", code: "PM", description: "Manage job information" },
+  { id: "a1000000-0000-0000-0000-000000000003", name: "KOC", code: "KOC", description: "Read self information" },
+  { id: "a1000000-0000-0000-0000-000000000004", name: "SaleAccount", code: "SA", description: "Read job & KOC info" },
+  { id: "a1000000-0000-0000-0000-000000000005", name: "BRAND", code: "BRAND", description: "Manage brand information" },
+];
 
 type UserRecord = {
-  id: number;
+  id: string | number;
   name: string;
   email: string;
+  roleId: string;
   role: string;
   status: string;
   joinDate: string;
@@ -29,30 +48,57 @@ type UserRecord = {
 type UserFormValues = {
   name: string;
   email: string;
-  role: string;
+  role: string; // roleId (UUID string)
   status: string;
 };
 
-const getRoleColor = (role: string) => {
-  switch (role) {
-    case "Admin":   return "red";
-    case "Manager": return "blue";
-    default:        return "default";
+const getRoleColor = (roleStr: string, rolesList: Role[]) => {
+  const matched = rolesList.find(
+    (r) => r.id === roleStr || r.code === roleStr || r.name === roleStr
+  );
+  const code = matched ? matched.code : roleStr;
+  switch (code?.toUpperCase()) {
+    case "ADMIN":
+      return "red";
+    case "PM":
+      return "blue";
+    case "KOC":
+      return "green";
+    case "SA":
+    case "SALEACCOUNT":
+      return "orange";
+    case "BRAND":
+      return "purple";
+    default:
+      return "default";
   }
 };
 
-const getStatusColor = (status: string) =>
-  status === "Active" ? "success" : "default";
+const getRoleLabel = (roleStr: string, rolesList: Role[]) => {
+  const matched = rolesList.find(
+    (r) => r.id === roleStr || r.code === roleStr || r.name === roleStr
+  );
+  return matched ? `${matched.name} (${matched.code})` : roleStr;
+};
+
+const getStatusColor = (status: string) => {
+  const s = status?.toUpperCase();
+  return s === "ACTIVE" || s === "SUCCESS" ? "success" : "default";
+};
 
 // ─── Modal Form Component ─────────────────────────────────────────────────────
 function UserModal({
   open,
   editingUser,
+  rolesList,
+  isLoadingRoles,
   onClose,
   onSubmit,
 }: {
   open: boolean;
   editingUser: UserRecord | null;
+  rolesList: Role[];
+  isLoadingRoles?: boolean;
   onClose: () => void;
   onSubmit: (values: UserFormValues) => void;
 }) {
@@ -65,7 +111,7 @@ function UserModal({
       form.setFieldsValue({
         name: editingUser.name,
         email: editingUser.email,
-        role: editingUser.role,
+        role: editingUser.roleId || editingUser.role,
         status: editingUser.status,
       });
     }
@@ -117,14 +163,21 @@ function UserModal({
         </Form.Item>
 
         <Form.Item
-          label="Vai trò"
+          label="Vai trò (Role)"
           name="role"
           rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}
         >
-          <Select placeholder="Chọn vai trò">
-            <Select.Option value="Admin">Admin</Select.Option>
-            <Select.Option value="Manager">Manager</Select.Option>
-            <Select.Option value="Affiliate">Affiliate</Select.Option>
+          <Select
+            placeholder="Chọn vai trò"
+            loading={isLoadingRoles}
+            showSearch
+            optionFilterProp="label"
+          >
+            {rolesList.map((r) => (
+              <Select.Option key={r.id} value={r.id} label={`${r.name} ${r.code}`}>
+                {r.name} ({r.code}){r.description ? ` — ${r.description}` : ""}
+              </Select.Option>
+            ))}
           </Select>
         </Form.Item>
 
@@ -147,39 +200,87 @@ function UserModal({
 export default function UserManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const users: UserRecord[] = [
-    { id: 1,  name: "Nguyen Van A",     email: "nguyenvana@gmail.com",     role: "Admin",     status: "Active",   joinDate: "2024-01-15", campaigns: 45 },
-    { id: 2,  name: "Tran Thi B",       email: "tranthib@gmail.com",       role: "Affiliate", status: "Active",   joinDate: "2024-02-20", campaigns: 38 },
-    { id: 3,  name: "Le Van C",         email: "levanc@gmail.com",         role: "Affiliate", status: "Inactive", joinDate: "2024-03-10", campaigns: 32 },
-    { id: 4,  name: "Pham Thi D",       email: "phamthid@gmail.com",       role: "Manager",   status: "Active",   joinDate: "2024-01-05", campaigns: 28 },
-    { id: 5,  name: "Hoang Van E",      email: "hoangvane@gmail.com",      role: "Affiliate", status: "Active",   joinDate: "2024-04-12", campaigns: 24 },
-    { id: 6,  name: "Vu Thi F",         email: "vuthif@gmail.com",         role: "Affiliate", status: "Active",   joinDate: "2024-05-08", campaigns: 18 },
-    { id: 7,  name: "Dang Van G",       email: "dangvang@gmail.com",       role: "Affiliate", status: "Active",   joinDate: "2024-05-15", campaigns: 55 },
-    { id: 8,  name: "Bui Thi H",        email: "buithih@gmail.com",        role: "Manager",   status: "Active",   joinDate: "2024-06-01", campaigns: 42 },
-    { id: 9,  name: "Do Van I",         email: "dovani@gmail.com",         role: "Affiliate", status: "Inactive", joinDate: "2024-06-20", campaigns: 11 },
-    { id: 10, name: "Ngo Thi J",        email: "ngothij@gmail.com",        role: "Affiliate", status: "Active",   joinDate: "2024-07-03", campaigns: 33 },
-    { id: 11, name: "Ly Van K",         email: "lyvank@gmail.com",         role: "Admin",     status: "Active",   joinDate: "2024-07-18", campaigns: 67 },
-    { id: 12, name: "Trinh Thi L",      email: "trinhthil@gmail.com",      role: "Affiliate", status: "Active",   joinDate: "2024-08-05", campaigns: 20 },
-    { id: 13, name: "Truong Van M",     email: "truongvanm@gmail.com",     role: "Affiliate", status: "Inactive", joinDate: "2024-08-22", campaigns: 9  },
-    { id: 14, name: "Dinh Thi N",       email: "dinhnthin@gmail.com",      role: "Manager",   status: "Active",   joinDate: "2024-09-10", campaigns: 51 },
-    { id: 15, name: "Ta Van O",         email: "tavano@gmail.com",         role: "Affiliate", status: "Active",   joinDate: "2024-09-25", campaigns: 29 },
-    { id: 16, name: "Luong Thi P",      email: "luongthip@gmail.com",      role: "Affiliate", status: "Active",   joinDate: "2024-10-07", campaigns: 16 },
-    { id: 17, name: "Ha Van Q",         email: "havanq@gmail.com",         role: "Affiliate", status: "Inactive", joinDate: "2024-10-19", campaigns: 7  },
-    { id: 18, name: "Cao Thi R",        email: "caothir@gmail.com",        role: "Affiliate", status: "Active",   joinDate: "2024-11-01", campaigns: 44 },
-    { id: 19, name: "Mai Van S",        email: "maivans@gmail.com",        role: "Manager",   status: "Active",   joinDate: "2024-11-14", campaigns: 37 },
-    { id: 20, name: "Vuong Thi T",      email: "vuongthit@gmail.com",      role: "Affiliate", status: "Active",   joinDate: "2024-11-28", campaigns: 22 },
-    { id: 21, name: "Lam Van U",        email: "lamvanu@gmail.com",        role: "Affiliate", status: "Inactive", joinDate: "2024-12-05", campaigns: 14 },
-    { id: 22, name: "Huynh Thi V",      email: "huynthiv@gmail.com",       role: "Affiliate", status: "Active",   joinDate: "2024-12-12", campaigns: 30 },
-    { id: 23, name: "Kieu Van W",       email: "kieuvanw@gmail.com",       role: "Affiliate", status: "Active",   joinDate: "2025-01-04", campaigns: 19 },
-    { id: 24, name: "Chau Thi X",       email: "chauthix@gmail.com",       role: "Manager",   status: "Active",   joinDate: "2025-01-18", campaigns: 48 },
-    { id: 25, name: "Tong Van Y",       email: "tongvany@gmail.com",       role: "Affiliate", status: "Inactive", joinDate: "2025-02-01", campaigns: 5  },
-    { id: 26, name: "Quan Thi Z",       email: "quanthiz@gmail.com",       role: "Affiliate", status: "Active",   joinDate: "2025-02-14", campaigns: 26 },
-    { id: 27, name: "Phan Van An",      email: "phanvanan@gmail.com",      role: "Affiliate", status: "Active",   joinDate: "2025-03-01", campaigns: 35 },
-    { id: 28, name: "Vo Thi Binh",      email: "vothibinh@gmail.com",      role: "Admin",     status: "Active",   joinDate: "2025-03-15", campaigns: 72 },
-    { id: 29, name: "Nguyen Van Cuong", email: "nguyenvancuong@gmail.com", role: "Affiliate", status: "Inactive", joinDate: "2025-04-01", campaigns: 3  },
-    { id: 30, name: "Le Thi Dung",      email: "lethidung@gmail.com",      role: "Manager",   status: "Active",   joinDate: "2025-04-20", campaigns: 60 },
-  ];
+  // 1. Fetch cached roles from REST API (GET /roles)
+  const { data: apiRoles, isLoading: isLoadingRoles } = useRolesQuery();
+
+  const rolesList = useMemo(() => {
+    if (Array.isArray(apiRoles) && apiRoles.length > 0) {
+      return apiRoles;
+    }
+    return FALLBACK_ROLES;
+  }, [apiRoles]);
+
+  // 2. Fetch users from REST API (GET /users)
+  const { data: apiUsers, isLoading, isFetching } = useUsersQuery({ q: searchQuery });
+  const createUserMutation = useCreateUserMutation();
+  const updateUserMutation = useUpdateUserMutation();
+  const deleteUserMutation = useDeleteUserMutation();
+
+  // Transform backend API User objects to display UserRecord
+  const displayUsers: UserRecord[] = useMemo(() => {
+    let rawList: User[] = [];
+    if (Array.isArray(apiUsers)) {
+      rawList = apiUsers;
+    } else if (apiUsers && typeof apiUsers === "object") {
+      const resObj = apiUsers as unknown as Record<string, unknown>;
+      if (Array.isArray(resObj.content)) {
+        rawList = resObj.content as User[];
+      } else if (
+        resObj.data &&
+        typeof resObj.data === "object" &&
+        Array.isArray((resObj.data as Record<string, unknown>).content)
+      ) {
+        rawList = (resObj.data as Record<string, unknown>).content as User[];
+      } else if (Array.isArray(resObj.data)) {
+        rawList = resObj.data as User[];
+      }
+    }
+
+    if (rawList.length > 0) {
+      return rawList.map((u: User) => {
+        let roleId = rolesList[0]?.id || "a1000000-0000-0000-0000-000000000003";
+        const uObj = u as unknown as Record<string, unknown>;
+
+        if (typeof uObj.roleId === "string") {
+          roleId = uObj.roleId;
+        } else if (Array.isArray(uObj.roleIds) && uObj.roleIds.length > 0) {
+          roleId = String(uObj.roleIds[0]);
+        } else if (u.admin || u.isAdmin) {
+          roleId = "a1000000-0000-0000-0000-000000000001";
+        } else if (Array.isArray(u.roles) && u.roles.length > 0) {
+          const firstRole = String(u.roles[0]);
+          const matched = rolesList.find(
+            (r) => r.id === firstRole || r.code === firstRole || r.name === firstRole
+          );
+          if (matched) roleId = matched.id;
+        }
+
+        const foundRole =
+          rolesList.find((r) => r.id === roleId) ||
+          rolesList.find((r) => r.code === roleId || r.name === roleId);
+
+        const finalRoleId = foundRole ? foundRole.id : roleId;
+        const finalRoleName = foundRole ? foundRole.name : String(uObj.role || roleId);
+
+        const rawStatus = (u.status || "ACTIVE").toString().toUpperCase();
+        const formattedStatus = rawStatus === "ACTIVE" ? "Active" : "Inactive";
+
+        return {
+          id: u.id,
+          name: u.fullName || u.username || u.email || "N/A",
+          email: u.email || "",
+          roleId: finalRoleId,
+          role: finalRoleName,
+          status: formattedStatus,
+          joinDate: u.createdAt ? new Date(u.createdAt as string).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+          campaigns: Number(uObj.campaigns ?? 0),
+        };
+      });
+    }
+    return [];
+  }, [apiUsers, rolesList]);
 
   const handleOpenAdd = () => {
     setEditingUser(null);
@@ -196,14 +297,44 @@ export default function UserManagement() {
     setEditingUser(null);
   };
 
-  const handleSubmit = (values: UserFormValues) => {
-    if (editingUser) {
-      message.success(`Đã cập nhật người dùng "${values.name}"`);
-    } else {
-      message.success(`Đã thêm người dùng "${values.name}"`);
+  const handleSubmit = async (values: UserFormValues) => {
+    const selectedRoleId = values.role; // Role UUID string
+    const formattedStatus = values.status?.toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE";
+
+    // Exact backend payload format:
+    // { "email": "...", "roleId": "...", "status": "ACTIVE", "fullName": "..." }
+    const payload = {
+      email: values.email,
+      roleId: selectedRoleId,
+      status: formattedStatus,
+      fullName: values.name,
+    };
+
+    try {
+      if (editingUser) {
+        await updateUserMutation.mutateAsync({
+          id: String(editingUser.id),
+          payload: payload as unknown as Partial<User>,
+        });
+        message.success(`Đã cập nhật người dùng "${values.name}"`);
+      } else {
+        await createUserMutation.mutateAsync(payload as unknown as Partial<User>);
+        message.success(`Đã thêm người dùng "${values.name}"`);
+      }
+      setModalOpen(false);
+      setEditingUser(null);
+    } catch {
+      message.error("Có lỗi xảy ra khi kết nối với REST API server!");
     }
-    setModalOpen(false);
-    setEditingUser(null);
+  };
+
+  const handleDelete = async (record: UserRecord) => {
+    try {
+      await deleteUserMutation.mutateAsync(String(record.id));
+      message.success(`Đã xóa người dùng "${record.name}"`);
+    } catch {
+      message.error("Có lỗi xảy ra khi xóa người dùng trên REST API server!");
+    }
   };
 
   const columns: TableColumnsType<UserRecord> = [
@@ -220,15 +351,15 @@ export default function UserManagement() {
     },
     {
       title: "Vai Trò",
-      dataIndex: "role",
-      key: "role",
-      filters: [
-        { text: "Admin", value: "Admin" },
-        { text: "Manager", value: "Manager" },
-        { text: "Affiliate", value: "Affiliate" },
-      ],
-      onFilter: (value, record) => record.role === value,
-      render: (role: string) => <Tag color={getRoleColor(role)}>{role}</Tag>,
+      dataIndex: "roleId",
+      key: "roleId",
+      filters: rolesList.map((r) => ({ text: r.name, value: r.id })),
+      onFilter: (value, record) => record.roleId === value || record.role === value,
+      render: (roleId: string, record: UserRecord) => (
+        <Tag color={getRoleColor(roleId, rolesList)}>
+          {getRoleLabel(record.roleId || record.role, rolesList)}
+        </Tag>
+      ),
     },
     {
       title: "Trạng Thái",
@@ -273,9 +404,9 @@ export default function UserManagement() {
             okText="Xóa"
             cancelText="Hủy"
             okType="danger"
-            onConfirm={() => message.success(`Đã xóa: ${record.name}`)}
+            onConfirm={() => handleDelete(record)}
           >
-            <Button type="primary" size="small" danger>
+            <Button type="primary" size="small" danger loading={deleteUserMutation.isPending}>
               Xóa
             </Button>
           </Popconfirm>
@@ -288,7 +419,7 @@ export default function UserManagement() {
     <>
       <PageMeta
         title="Quản lý người dùng"
-        description="Trang quản lý người dùng với mock data demo"
+        description="Trang quản lý người dùng tích hợp REST API với dynamic role caching"
       />
       <PageBreadcrumb pageTitle="Quản lý người dùng" />
 
@@ -296,17 +427,25 @@ export default function UserManagement() {
         <Input.Search
           placeholder="Tìm kiếm người dùng..."
           style={{ width: 400 }}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onSearch={(val) => setSearchQuery(val)}
           allowClear
         />
-        <Button type="primary" onClick={handleOpenAdd}>
+        <Button
+          type="primary"
+          onClick={handleOpenAdd}
+          loading={createUserMutation.isPending || updateUserMutation.isPending}
+        >
           + Thêm Người Dùng
         </Button>
       </Flex>
 
       <Table<UserRecord>
         columns={columns}
-        dataSource={users}
+        dataSource={displayUsers}
         rowKey="id"
+        loading={isLoading || isFetching}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
@@ -319,6 +458,8 @@ export default function UserManagement() {
       <UserModal
         open={modalOpen}
         editingUser={editingUser}
+        rolesList={rolesList}
+        isLoadingRoles={isLoadingRoles}
         onClose={handleClose}
         onSubmit={handleSubmit}
       />

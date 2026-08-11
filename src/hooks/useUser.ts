@@ -53,3 +53,25 @@ export const useDeleteUserMutation = () => {
     },
   });
 };
+
+/**
+ * Combined custom hook `useUsers` for convenience
+ */
+export const useUsers = (params?: UserListParams) => {
+  const query = useUsersQuery(params);
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+  const deleteMutation = useDeleteUserMutation();
+
+  return {
+    ...query,
+    users: query.data ?? [],
+    createUser: createMutation.mutateAsync,
+    updateUser: updateMutation.mutateAsync,
+    deleteUser: deleteMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+  };
+};
+

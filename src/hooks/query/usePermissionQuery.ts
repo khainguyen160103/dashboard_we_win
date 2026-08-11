@@ -9,11 +9,13 @@ export const usePermissionsQuery = (params?: PermissionListParams) =>
   useQuery({
     queryKey: queryKeys.permissions.list(params),
     queryFn: () => permissionService.list(params),
+    staleTime: 1000 * 60 * 30, // 30 minutes cache in memory
+    gcTime: 1000 * 60 * 60, // 1 hour garbage collection time
   });
 
-export const usePermissionQuery = (id: number, enabled = true) =>
+export const usePermissionQuery = (id: string | number, enabled = true) =>
   useQuery({
-    queryKey: queryKeys.permissions.detail(id),
+    queryKey: queryKeys.permissions.detail(Number(id) || 0),
     queryFn: () => permissionService.get(id),
     enabled,
   });
@@ -33,14 +35,16 @@ export const useUpdatePermissionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: Partial<PermissionPayload> }) =>
+    mutationFn: ({ id, payload }: { id: string | number; payload: Partial<PermissionPayload> }) =>
       permissionService.update(id, payload),
     onSuccess: (updatedPermission) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.permissions.lists() });
-      queryClient.setQueryData(
-        queryKeys.permissions.detail(updatedPermission.id),
-        updatedPermission,
-      );
+      if (updatedPermission?.id) {
+        queryClient.setQueryData(
+          queryKeys.permissions.detail(Number(updatedPermission.id) || 0),
+          updatedPermission,
+        );
+      }
     },
   });
 };
@@ -49,10 +53,10 @@ export const useDeletePermissionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => permissionService.remove(id),
+    mutationFn: (id: string | number) => permissionService.remove(id),
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.permissions.lists() });
-      queryClient.removeQueries({ queryKey: queryKeys.permissions.detail(id) });
+      queryClient.removeQueries({ queryKey: queryKeys.permissions.detail(Number(id) || 0) });
     },
   });
 };

@@ -156,8 +156,8 @@ export function JobKOCView({
             {record.status === "Rejected"
               ? "Nộp lại Video ↺"
               : record.status === "Pending"
-              ? "Cập nhật Video"
-              : "Nộp Video ⬆"}
+                ? "Cập nhật Video"
+                : "Nộp Video ⬆"}
           </Button>
         );
       },
@@ -166,40 +166,6 @@ export function JobKOCView({
 
   return (
     <>
-      {/* KOC identity switcher header */}
-      <Card size="small" style={{ marginBottom: 20, backgroundColor: "#f6ffed", borderColor: "#b7eb8f" }}>
-        <Flex justify="space-between" align="center">
-          <Space size={12}>
-            <Avatar icon={<UserOutlined />} size={40} style={{ backgroundColor: "#52c41a" }} />
-            <div>
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                Đang xem với tư cách KOC:
-              </Typography.Text>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#237804" }}>
-                {currentKoc?.name || "KOC User"}
-              </div>
-              <div style={{ fontSize: 12, color: "#595959" }}>
-                Email: {currentKoc?.email} • Kênh: {currentKoc?.platform} ({currentKoc?.tier})
-              </div>
-            </div>
-          </Space>
-
-          <Space align="center">
-            <span style={{ fontSize: 13, color: "#595959" }}>Đổi tài khoản KOC:</span>
-            <Select
-              value={activeKocId}
-              onChange={onChangeActiveKoc}
-              style={{ width: 220 }}
-              options={initialMockKOCs.map((k) => ({
-                value: k.id,
-                label: `👤 ${k.name} (${k.platform})`,
-              }))}
-            />
-          </Space>
-        </Flex>
-      </Card>
-
-      {/* Summary statistics for KOC */}
       <Flex gap={16} style={{ marginBottom: 20 }}>
         <Card size="small" style={{ flex: 1 }}>
           <Statistic

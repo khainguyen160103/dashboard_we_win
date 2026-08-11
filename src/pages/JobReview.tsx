@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
-import { Card, Flex, Radio, Space, Tag, message } from "antd";
-import { UserOutlined, SolutionOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
+import { Card, Flex, Space, Spin, Tag, message } from "antd";
+import { SafetyCertificateOutlined } from "@ant-design/icons";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import { useAuthStore } from "../hooks/store/useAuthStore";
-import { initialMockKOCs } from "../features/koc/koc.data";
+import { getActiveUserRole, getRoleDisplayName } from "../utils/rbac";
 
 import {
   JobPMView,
@@ -12,48 +12,36 @@ import {
   PMReviewModal,
   UploadVideoModal,
   KOCInfoModal,
-  loadJobs,
-  saveJobs,
 } from "../features/job";
 
 import type {
   JobRecord,
   PMReviewFormValues,
   KOCUploadFormValues,
-  RoleType,
 } from "../features/job";
 
-type RBACMode = "AUTO" | "PM" | "KOC";
+import {
+  useJobsQuery,
+  useMyJobsQuery,
+  useSubmitVideoMutation,
+  useReviewVideoMutation,
+} from "../hooks/query/useJobQuery";
 
 export default function JobReview() {
   const user = useAuthStore((state) => state.user);
 
-  // Determine user's real role from Zustand / JWT
-  const detectedRole = useMemo<RoleType>(() => {
-    if (!user) return "PM"; // Default fallback if guest/demo
-    const roles = (user.roles || []).map((r) => r.toUpperCase());
-    const isKOC = roles.some((r) => r.includes("KOC")) || user.email?.toLowerCase().includes("koc");
-    return isKOC ? "KOC" : "PM";
-  }, [user]);
+  // Tự động kiểm tra Role người dùng đăng nhập từ Auth Store / JWT
+  const activeRole = useMemo(() => getActiveUserRole(user), [user]);
+  const roleDisplayName = useMemo(() => getRoleDisplayName(activeRole), [activeRole]);
 
-  // Find matching KOC ID if logged-in user is a KOC
-  const loggedInKocId = useMemo<number>(() => {
-    if (!user) return 1; // Default to Linh Barbie for demo
-    const found = initialMockKOCs.find(
-      (k) => k.email.toLowerCase() === user.email.toLowerCase() || k.name.toLowerCase() === user.fullName?.toLowerCase()
-    );
-    return found ? found.id : 1;
-  }, [user]);
+  // REST API hooks for Job Review
+  const isKocUser = activeRole === "KOC";
+  const { data: apiJobs, isLoading: isLoadingAllJobs, isFetching: isFetchingAllJobs } = useJobsQuery(undefined, { enabled: !isKocUser });
+  const { data: apiMyJobs, isLoading: isLoadingMyJobs } = useMyJobsQuery({ enabled: isKocUser });
 
-  // RBAC mode: "AUTO" (strictly follows auth), "PM", or "KOC"
-  const [rbacMode, setRbacMode] = useState<RBACMode>("AUTO");
-  const [activeKocId, setActiveKocId] = useState<number>(loggedInKocId);
 
-  // Effective role based on mode
-  const effectiveRole: RoleType = rbacMode === "AUTO" ? detectedRole : rbacMode;
-
-  // Jobs state with persistence
-  const [jobsList, setJobsList] = useState<JobRecord[]>(loadJobs);
+  const submitVideoMutation = useSubmitVideoMutation();
+  const reviewVideoMutation = useReviewVideoMutation();
 
   // Modals state
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -61,67 +49,125 @@ export default function JobReview() {
   const [kocModalOpen, setKocModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobRecord | null>(null);
 
-  // ── PM Review Handler ──
+  // Format API Jobs to JobRecord
+  const jobsList: JobRecord[] = useMemo(() => {
+    const rawList = isKocUser ? (apiMyJobs || apiJobs) : apiJobs;
+    let list: any[] = [];
+    if (Array.isArray(rawList)) {
+      list = rawList;
+    } else if (rawList && typeof rawList === "object") {
+      const resObj = rawList as any;
+      if (Array.isArray(resObj.content)) list = resObj.content;
+      else if (Array.isArray(resObj.data)) list = resObj.data;
+    }
+
+    if (list.length > 0) {
+      return list.map((j) => {
+        let status: JobRecord["status"] = "NotSubmitted";
+        const vStatus = (j.videoStatus || j.status || "").toUpperCase();
+        if (vStatus === "CHO_PM_DUYET" || vStatus === "PENDING") status = "Pending";
+        else if (vStatus === "DA_PHE_DUYET" || vStatus === "APPROVED") status = "Approved";
+        else if (vStatus === "TU_CHOI" || vStatus === "REJECTED") status = "Rejected";
+
+        let quality: JobRecord["quality"] = undefined;
+        const qRating = (j.qualityRating || j.quality || "").toUpperCase();
+        if (qRating === "XUAT_SAC" || qRating === "EXCELLENT") quality = "Excellent";
+        else if (qRating === "TOT" || qRating === "GOOD") quality = "Good";
+        else if (qRating === "DAT" || qRating === "AVERAGE") quality = "Average";
+        else if (qRating === "KEM" || qRating === "POOR") quality = "Poor";
+
+        return {
+          id: String(j.id),
+          campaignId: j.campaignId || 1,
+          campaignName: j.campaignName || j.campaign?.name || "Chiến dịch",
+          kocId: j.kocId || j.userId || 1,
+          kocName: j.kocName || j.user?.fullName || user?.fullName || "KOC User",
+          kocEmail: j.kocEmail || j.user?.email || "",
+          kocPlatform: j.kocPlatform || j.platform || "TikTok",
+          kocTier: j.kocTier || j.tier || "Nano",
+          kocFollowers: j.kocFollowers || j.followers || 0,
+          kocEngagementRate: j.kocEngagementRate,
+          title: j.videoTitle || j.title || "Video Review Sản phẩm",
+          description: j.description || "",
+          videoUrl: j.videoUrl || undefined,
+          status,
+          quality,
+          pmFeedback: j.pmFeedback || "",
+          submittedDate: j.submittedAt ? new Date(j.submittedAt).toISOString().split("T")[0] : undefined,
+          approvedDate: j.approvedAt ? new Date(j.approvedAt).toISOString().split("T")[0] : undefined,
+        };
+      });
+    }
+
+    return [];
+  }, [apiJobs, apiMyJobs, isKocUser, user]);
+
+  // ── PM Review Handler (PUT /jobs/{jobId}/review-video) ──
   const handleOpenReviewModal = (job: JobRecord) => {
     setSelectedJob(job);
     setReviewModalOpen(true);
   };
 
-  const handleSubmitPMReview = (values: PMReviewFormValues) => {
+  const handleSubmitPMReview = async (values: PMReviewFormValues) => {
     if (!selectedJob) return;
 
-    const updated = jobsList.map((j) => {
-      if (j.id === selectedJob.id) {
-        return {
-          ...j,
-          status: values.status,
-          quality: values.quality,
-          pmFeedback: values.pmFeedback,
-          approvedDate: values.status === "Approved" ? new Date().toISOString().split("T")[0] : j.approvedDate,
-        };
-      }
-      return j;
-    });
+    const videoStatusMap: Record<string, string> = {
+      Approved: "DA_PHE_DUYET",
+      Rejected: "TU_CHOI",
+      Pending: "CHO_PM_DUYET",
+    };
 
-    setJobsList(updated);
-    saveJobs(updated);
-    message.success(
-      values.status === "Approved"
-        ? `Đã phê duyệt Video của ${selectedJob.kocName}!`
-        : `Đã phản hồi yêu cầu sửa video cho ${selectedJob.kocName}!`
-    );
-    setReviewModalOpen(false);
-    setSelectedJob(null);
+    const ratingMap: Record<string, string> = {
+      "Xuất sắc": "XUAT_SAC",
+      "Tốt": "TOT",
+      "Đạt": "DAT",
+      "Cần sửa": "KEM",
+    };
+
+    try {
+      await reviewVideoMutation.mutateAsync({
+        jobId: String(selectedJob.id),
+        payload: {
+          videoStatus: videoStatusMap[values.status] || "DA_PHE_DUYET",
+          qualityRating: ratingMap[values.quality] || "XUAT_SAC",
+          pmFeedback: values.pmFeedback || "",
+        },
+      });
+      message.success(
+        values.status === "Approved"
+          ? `Đã phê duyệt Video của ${selectedJob.kocName} qua REST API!`
+          : `Đã phản hồi yêu cầu sửa video cho ${selectedJob.kocName} qua REST API!`
+      );
+      setReviewModalOpen(false);
+      setSelectedJob(null);
+    } catch {
+      message.error("Có lỗi xảy ra khi cập nhật đánh giá trên REST API server!");
+    }
   };
 
-  // ── KOC Upload Handler ──
+  // ── KOC Upload Handler (POST /jobs/{jobId}/submit-video) ──
   const handleOpenUploadModal = (job: JobRecord) => {
     setSelectedJob(job);
     setUploadModalOpen(true);
   };
 
-  const handleSubmitKOCUpload = (values: KOCUploadFormValues) => {
+  const handleSubmitKOCUpload = async (values: KOCUploadFormValues) => {
     if (!selectedJob) return;
 
-    const updated = jobsList.map((j) => {
-      if (j.id === selectedJob.id) {
-        return {
-          ...j,
-          title: values.title,
-          description: values.description,
-          videoUrl: values.videoUrl,
-          status: "Pending" as const,
-          submittedDate: new Date().toISOString().split("T")[0],
-        };
-      }
-      return j;
-    });
-
-    setJobsList(updated);
-    saveJobs(updated);
-    message.success(`Đã gửi Video cho PM duyệt!`);
-    setUploadModalOpen(false);
-    setSelectedJob(null);
+    try {
+      await submitVideoMutation.mutateAsync({
+        jobId: String(selectedJob.id),
+        payload: {
+          videoTitle: values.title,
+          videoUrl: values.videoUrl ?? "",
+        },
+      });
+      message.success(`Đã nộp Video cho PM duyệt qua REST API!`);
+      setUploadModalOpen(false);
+      setSelectedJob(null);
+    } catch {
+      message.error("Có lỗi xảy ra khi nộp video lên REST API server!");
+    }
   };
 
   // ── KOC Info Handler ──
@@ -130,72 +176,34 @@ export default function JobReview() {
     setKocModalOpen(true);
   };
 
+  const isLoading = isLoadingAllJobs || isLoadingMyJobs || isFetchingAllJobs;
+
   return (
     <>
       <PageMeta
-        title="Quản lý Job & Phê duyệt Video (RBAC)"
-        description="Trang quản lý Job và duyệt video tự động phân quyền theo Auth Role PM / KOC"
+        title="Quản lý Job & Phê duyệt Video"
+        description="Trang quản lý Job và duyệt video tự động phân quyền theo REST API"
       />
       <PageBreadcrumb pageTitle="Quản lý Job & Phê duyệt Video" />
 
-      {/* RBAC Auth & Control Card */}
-      <Card size="small" style={{ marginBottom: 20, background: "#fafafa" }}>
-        <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
-          <Space size={12}>
-            <SafetyCertificateOutlined style={{ fontSize: 20, color: "#1890ff" }} />
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 13 }}>
-                Phân quyền người dùng (RBAC):{" "}
-                <Tag color={detectedRole === "PM" ? "blue" : "green"}>
-                  {user ? `User: ${user.fullName || user.username} (${user.roles?.join(", ") || detectedRole})` : `Giao diện Demo (${detectedRole})`}
-                </Tag>
-              </div>
-              <div style={{ fontSize: 12, color: "#8c8c8c" }}>
-                {effectiveRole === "PM"
-                  ? "Quyền PM: Được xem toàn bộ Job, thông tin KOC & thực hiện phê duyệt / chấm điểm video."
-                  : "Quyền KOC: Chỉ xem các Job của chiến dịch đã tham gia & nộp video bài đăng."}
-              </div>
-            </div>
-          </Space>
 
-          {/* RBAC Mode Selector (Auto vs Manual Test override) */}
-          <Space align="center">
-            <span style={{ fontSize: 12, color: "#595959" }}>Chế độ hiển thị:</span>
-            <Radio.Group
-              value={rbacMode}
-              onChange={(e) => setRbacMode(e.target.value as RBACMode)}
-              buttonStyle="solid"
-              size="small"
-            >
-              <Radio.Button value="AUTO">
-                ⚡ Tự động theo Auth ({detectedRole})
-              </Radio.Button>
-              <Radio.Button value="PM">
-                <SolutionOutlined /> Xem giao diện PM
-              </Radio.Button>
-              <Radio.Button value="KOC">
-                <UserOutlined /> Xem giao diện KOC
-              </Radio.Button>
-            </Radio.Group>
-          </Space>
-        </Flex>
-      </Card>
-
-      {/* RBAC Active View */}
-      {effectiveRole === "PM" ? (
-        <JobPMView
-          jobs={jobsList}
-          onOpenReviewModal={handleOpenReviewModal}
-          onOpenKocModal={handleOpenKocModal}
-        />
-      ) : (
-        <JobKOCView
-          jobs={jobsList}
-          activeKocId={activeKocId}
-          onChangeActiveKoc={setActiveKocId}
-          onOpenUploadModal={handleOpenUploadModal}
-        />
-      )}
+      <Spin spinning={isLoading} tip="Đang tải dữ liệu Job từ REST API server...">
+        {/* RBAC Active View based on logged-in user role */}
+        {activeRole === "KOC" ? (
+          <JobKOCView
+            jobs={jobsList}
+            activeKocId={1}
+            onChangeActiveKoc={() => { }}
+            onOpenUploadModal={handleOpenUploadModal}
+          />
+        ) : (
+          <JobPMView
+            jobs={jobsList}
+            onOpenReviewModal={handleOpenReviewModal}
+            onOpenKocModal={handleOpenKocModal}
+          />
+        )}
+      </Spin>
 
       {/* Modals */}
       <PMReviewModal

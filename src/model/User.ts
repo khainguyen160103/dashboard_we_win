@@ -1,19 +1,20 @@
 export type User = {
   // Core identity
   id: string;
-  username: string;
+  username?: string;
   email: string;
   fullName: string;
+  roleId?: string;
 
   // Roles & permissions (from backend JWT/response)
-  roles: string[];
-  permissions: string[]
-  admin: boolean;
+  roles?: string[];
+  permissions?: string[];
+  admin?: boolean;
   isAdmin?: boolean; // alias from JWT claims
 
   // Status
   status: string;
-  version: number;
+  version?: number;
 
   // Optional profile fields (may not always be returned)
   passwordHash?: string;
@@ -28,7 +29,14 @@ export type User = {
   isDeleted?: boolean;
   deletedAt?: string | null;
   deletedBy?: string | null;
-}
+};
+
+export type UserRequest = {
+  email: string;
+  roleId: string;
+  status: string;
+  fullName: string;
+};
 
 export type loginResponse = {
   accessToken: string | null;
@@ -36,11 +44,9 @@ export type loginResponse = {
   tokenType: string | null;
   expiresIn: number | null;
   user: User | null;
-}
+};
 
 export type loginRequest = {
   email: string;
   password: string;
-}
-
-
+};

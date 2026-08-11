@@ -3,27 +3,40 @@ import type { Role, RolePayload } from "../model/Role";
 
 export const roleService = {
   list: async (params?: { page?: number; limit?: number; q?: string }): Promise<Role[]> => {
-    const { data } = await axiosClient.get<Role[]>('/api/roles', { params });
-    return data;
+    const { data } = await axiosClient.get<any>('/roles', { params });
+    // Support unwrapping Spring Page / ApiResponse wrapper
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data?.data?.content && Array.isArray(data.data.content)) {
+      return data.data.content;
+    }
+    if (data?.content && Array.isArray(data.content)) {
+      return data.content;
+    }
+    if (data?.data && Array.isArray(data.data)) {
+      return data.data;
+    }
+    return [];
   },
 
-  get: async (id: number): Promise<Role> => {
-    const { data } = await axiosClient.get<Role>(`/api/roles/${id}`);
-    return data;
+  get: async (id: string): Promise<Role> => {
+    const { data } = await axiosClient.get<any>(`/roles/${id}`);
+    return data?.data ?? data;
   },
 
   create: async (payload: RolePayload): Promise<Role> => {
-    const { data } = await axiosClient.post<Role>('/api/roles', payload);
-    return data;
+    const { data } = await axiosClient.post<any>('/roles', payload);
+    return data?.data ?? data;
   },
 
-  update: async (id: number, payload: Partial<RolePayload>): Promise<Role> => {
-    const { data } = await axiosClient.put<Role>(`/api/roles/${id}`, payload);
-    return data;
+  update: async (id: string, payload: Partial<RolePayload>): Promise<Role> => {
+    const { data } = await axiosClient.put<any>(`/roles/${id}`, payload);
+    return data?.data ?? data;
   },
 
-  remove: async (id: number): Promise<void> => {
-    await axiosClient.delete(`/api/roles/${id}`);
+  remove: async (id: string): Promise<void> => {
+    await axiosClient.delete(`/roles/${id}`);
   },
 };
 
