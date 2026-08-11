@@ -22,7 +22,6 @@ import {
   useCreateCampaignMutation,
   useUpdateCampaignMutation,
   useDeleteCampaignMutation,
-  useInviteKocMutation,
 } from "../hooks/query/useCampaignQuery";
 
 export default function CampaignManagement() {
@@ -33,7 +32,7 @@ export default function CampaignManagement() {
   const createCampaignMutation = useCreateCampaignMutation();
   const updateCampaignMutation = useUpdateCampaignMutation();
   const deleteCampaignMutation = useDeleteCampaignMutation();
-  const inviteKocMutation = useInviteKocMutation();
+
 
   // Modals & Drawer state
   const [formModalOpen, setFormModalOpen] = useState(false);
@@ -131,18 +130,6 @@ export default function CampaignManagement() {
     }
   };
 
-  // Invite KOC handler for campaign pipeline
-  const handleInviteKocsToCampaign = async (campaignId: string, userIds: string[]) => {
-    try {
-      await inviteKocMutation.mutateAsync({
-        campaignId,
-        payload: { userIds },
-      });
-      message.success(`Đã mời ${userIds.length} KOC tham gia chiến dịch qua REST API!`);
-    } catch {
-      message.error("Có lỗi xảy ra khi mời KOC!");
-    }
-  };
 
   const handleUpdateCampaignInDrawer = (updated: Campaign) => {
     setSelectedCampaign(updated);

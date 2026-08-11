@@ -1,10 +1,9 @@
 import { useState, useMemo } from "react";
-import { Card, Flex, Space, Spin, Tag, message } from "antd";
-import { SafetyCertificateOutlined } from "@ant-design/icons";
+import { Spin, message } from "antd";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import { useAuthStore } from "../hooks/store/useAuthStore";
-import { getActiveUserRole, getRoleDisplayName } from "../utils/rbac";
+import { getActiveUserRole } from "../utils/rbac";
 
 import {
   JobPMView,
@@ -32,7 +31,7 @@ export default function JobReview() {
 
   // Tự động kiểm tra Role người dùng đăng nhập từ Auth Store / JWT
   const activeRole = useMemo(() => getActiveUserRole(user), [user]);
-  const roleDisplayName = useMemo(() => getRoleDisplayName(activeRole), [activeRole]);
+
 
   // REST API hooks for Job Review
   const isKocUser = activeRole === "KOC";

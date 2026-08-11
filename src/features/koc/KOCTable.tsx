@@ -11,7 +11,7 @@ import {
   Tooltip,
   message,
 } from "antd";
-import { UserOutlined, EyeOutlined, LockOutlined, ClockCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { UserOutlined, EyeOutlined, LockOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import type { KOCRecord, Platform } from "./types";
 import { getTierColor, getStatusColor, getPlatformIcon, formatFollowers } from "./koc.utils";

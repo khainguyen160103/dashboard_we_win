@@ -1,17 +1,13 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Link } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
-import { useAuthStore } from "../hooks/store/useAuthStore";
-import { getActiveUserRole, getRoleDisplayName } from "../utils/rbac";
+
 
 const AppHeader: React.FC = () => {
-  const user = useAuthStore((state) => state.user);
-  const activeRole = useMemo(() => getActiveUserRole(user), [user]);
-  const roleName = useMemo(() => getRoleDisplayName(activeRole), [activeRole]);
 
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
 

@@ -1,26 +1,20 @@
 import {
-  Avatar,
   Button,
   Card,
   Flex,
-  Select,
-  Space,
   Statistic,
   Table,
   Tag,
-  Typography,
 } from "antd";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
   UploadOutlined,
-  UserOutlined,
 } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import type { JobRecord } from "./types";
 import { getJobStatusColor, getJobStatusLabel, getQualityColor, getQualityLabel } from "./job.utils";
-import { initialMockKOCs } from "../koc/koc.data";
 
 interface JobKOCViewProps {
   jobs: JobRecord[];
@@ -32,12 +26,10 @@ interface JobKOCViewProps {
 export function JobKOCView({
   jobs,
   activeKocId,
-  onChangeActiveKoc,
   onOpenUploadModal,
 }: JobKOCViewProps) {
   // Filter jobs for the selected KOC
   const kocJobs = jobs.filter((j) => j.kocId === activeKocId);
-  const currentKoc = initialMockKOCs.find((k) => k.id === activeKocId);
 
   const pendingCount = kocJobs.filter((j) => j.status === "Pending").length;
   const approvedCount = kocJobs.filter((j) => j.status === "Approved").length;
