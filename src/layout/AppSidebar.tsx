@@ -44,7 +44,7 @@ const allNavItems: NavItem[] = [
   {
     icon: <BoxCubeIcon />,
     name: "Vận hành chiến dịch",
-    path: "/campaign-management",
+    path: "/campaign",
     roles: ["ADMIN", "SALES", "PM"],
   },
   {
@@ -56,13 +56,13 @@ const allNavItems: NavItem[] = [
   {
     icon: <UserCircleIcon />,
     name: "Quản lý User",
-    path: "/user-management",
+    path: "/user",
     roles: ["ADMIN"],
   },
   {
     icon: <LockIcon />,
     name: "Phân quyền người dùng",
-    path: "/permission-management",
+    path: "/permission",
     roles: ["ADMIN"],
   },
 ];
