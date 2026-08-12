@@ -3,9 +3,6 @@ import { authService } from "../services/auth.service";
 import { useAuthStore } from "./store/useAuthStore";
 import type { loginRequest } from "../model/User";
 
-/**
- * Fetch current user profile (/auth/me) with React Query
- */
 export const useMeQuery = (options?: { enabled?: boolean }) => {
     const setAuth = useAuthStore((state) => state.setAuth);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

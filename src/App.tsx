@@ -7,6 +7,7 @@ import CampaignManagement from "./pages/CampaignManagement";
 import JobReview from "./pages/JobReview";
 import KPIDashboard from "./pages/KPIDashboard";
 import KOCManagement from "./pages/KOCManagement";
+import BrandManagement from "./pages/BrandManagement";
 import PermissionManagement from "./pages/PermissionManagement";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
@@ -45,11 +46,12 @@ export default function App() {
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
-            <Route path="/user-management" element={<UserManagement />} />
-            <Route path="/koc-management" element={<KOCManagement />} />
-            <Route path="/campaign-management" element={<CampaignManagement />} />
+            <Route path="/user" element={<UserManagement />} />
+            <Route path="/koc" element={<KOCManagement />} />
+            <Route path="/brand" element={<BrandManagement />} />
+            <Route path="/campaign" element={<CampaignManagement />} />
             <Route path="/job-review" element={<JobReview />} />
-            <Route path="/permission-management" element={<PermissionManagement />} />
+            <Route path="/permission" element={<PermissionManagement />} />
 
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />
