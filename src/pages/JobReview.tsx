@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Spin, message } from "antd";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import { useAuthStore } from "../hooks/store/useAuthStore";
+import { authStore } from "../store/authStore";
 import { getActiveUserRole } from "../utils/rbac";
 
 import {
@@ -27,7 +27,7 @@ import {
 } from "../hooks/query/useJobQuery";
 
 export default function JobReview() {
-  const user = useAuthStore((state) => state.user);
+  const user = authStore((state) => state.user);
 
   // Tự động kiểm tra Role người dùng đăng nhập từ Auth Store / JWT
   const activeRole = useMemo(() => getActiveUserRole(user), [user]);

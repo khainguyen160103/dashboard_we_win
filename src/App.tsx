@@ -9,28 +9,19 @@ import KPIDashboard from "./pages/KPIDashboard";
 import KOCManagement from "./pages/KOCManagement";
 import BrandManagement from "./pages/BrandManagement";
 import PermissionManagement from "./pages/PermissionManagement";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
-import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
-import Buttons from "./pages/UiElements/Buttons";
-import LineChart from "./pages/Charts/LineChart";
-import BarChart from "./pages/Charts/BarChart";
 import Calendar from "./pages/Calendar";
-import BasicTables from "./pages/Tables/BasicTables";
-import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminPage from "./pages/Admin/AdminPage";
+import KalodataCreator from "./pages/KalodataCreator";
 
 export default function App() {
   return (
     <>
       <Router>
-        <ScrollToTop />
+        {/* <ScrollToTop /> */}
         <Routes>
           {/* Dashboard Layout (Protected) */}
           <Route
@@ -52,29 +43,16 @@ export default function App() {
             <Route path="/campaign" element={<CampaignManagement />} />
             <Route path="/job-review" element={<JobReview />} />
             <Route path="/permission" element={<PermissionManagement />} />
+            <Route path="/kalodata" element={<KalodataCreator />} />
 
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
 
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
 
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
 
             <Route
               path="/admin"
               element={
-                <ProtectedRoute requireAdmin>
+                <ProtectedRoute>
                   <AdminPage />
                 </ProtectedRoute>
               }

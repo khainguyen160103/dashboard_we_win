@@ -1,25 +1,20 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 import type { ReactNode } from "react";
-import { useAuth } from "../../hooks/useAuth";
+import { authStore } from "../../store/authStore";
 
 type ProtectedRouteProps = {
   children?: ReactNode;
-  requireAdmin?: boolean;
 };
 
 export default function ProtectedRoute({
   children,
-  requireAdmin = false,
+
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated } = authStore();
   const location = useLocation();
 
   if (!isAuthenticated) {
     return <Navigate to="/signin" state={{ from: location }} replace />;
-  }
-
-  if (requireAdmin && !isAdmin) {
-    return <Navigate to="/" replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

@@ -1,4 +1,4 @@
-import { useAuthStore } from "../../hooks/store/useAuthStore";
+import { authStore } from "../../store/authStore";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
@@ -15,7 +15,7 @@ function getInitials(name?: string): string {
 
 export default function UserMetaCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const user = useAuthStore((state) => state.user);
+  const user = authStore((state) => state.user);
 
   // Fallback to demo profile if user is not logged in
   const displayName = user?.fullName || user?.username || "Nguyễn Văn Khải";

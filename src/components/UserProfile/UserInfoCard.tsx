@@ -1,4 +1,4 @@
-import { useAuthStore } from "../../hooks/store/useAuthStore";
+import { authStore } from "../../store/authStore";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
@@ -7,7 +7,7 @@ import Label from "../form/Label";
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const user = useAuthStore((state) => state.user);
+  const user = authStore((state) => state.user);
 
   const fullName = user?.fullName || user?.username || "Nguyễn Văn Khải";
   const email = user?.email || "khai@wewin.vn";

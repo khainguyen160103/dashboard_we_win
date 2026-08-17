@@ -15,18 +15,13 @@ export default function SignInForm() {
     },
   });
 
-  const { loginAsync, isLoggingIn } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { useLogin } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit: SubmitHandler<loginRequest> = async (data) => {
     try {
-      await loginAsync(data);
-      message.success("Logged in successfully!");
-      const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
-      navigate(from, { replace: true });
+      useLogin.mutate(data);
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -112,7 +107,7 @@ export default function SignInForm() {
 
                 <div>
                   <Form.Item label={null}>
-                    <Button type="primary" htmlType="submit" loading={isLoggingIn} className="w-full">
+                    <Button type="primary" htmlType="submit" className="w-full">
                       Sign in
                     </Button>
                   </Form.Item>

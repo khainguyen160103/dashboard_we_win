@@ -37,7 +37,7 @@ import type {
 import { useUsers } from "../hooks/useUser";
 import type { User } from "../model/User";
 import { useRBACStore } from "../hooks/store/useRBACStore";
-import { useAuthStore } from "../hooks/store/useAuthStore";
+import { authStore } from "../store/authStore";
 import { getActiveUserRole } from "../utils/rbac";
 
 // Constant KOC Role ID
@@ -71,7 +71,7 @@ export default function KOCManagement() {
   const [editingKOC, setEditingKOC] = useState<KOCRecord | null>(null);
 
   // ── Auth User & RBAC ──
-  const user = useAuthStore((state) => state.user);
+  const user = authStore((state) => state.user);
   const activeRole = useMemo(() => getActiveUserRole(user), [user]);
 
   const accessRequests = useRBACStore((state) => state.accessRequests);

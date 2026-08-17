@@ -11,14 +11,20 @@ import {
   Tooltip,
   message,
 } from "antd";
-import { UserOutlined, EyeOutlined, LockOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  EyeOutlined,
+  LockOutlined,
+  ClockCircleOutlined,
+  LinkOutlined,
+} from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import type { KOCRecord, Platform } from "./types";
 import { getTierColor, getStatusColor, getPlatformIcon, formatFollowers } from "./koc.utils";
 import { formatVND } from "../campaign/campaign.utils";
 import { useRBACStore } from "../../hooks/store/useRBACStore";
-import { useAuthStore } from "../../hooks/store/useAuthStore";
-import { getActiveUserRole } from "../../utils/rbac";
+import { authStore } from "../../store/authStore";
+import { getActiveUserRole, canViewPrivateKOCFields, isBrandRole } from "../../utils/rbac";
 
 interface KOCTableProps {
   kocsList: KOCRecord[];
@@ -39,16 +45,20 @@ export function KOCTable({
   onDelete,
   onViewHistory,
 }: KOCTableProps) {
-  const user = useAuthStore((state) => state.user);
+  const user = authStore((state) => state.user);
   const activeRole = React.useMemo(() => getActiveUserRole(user), [user]);
 
   const requestKocAccess = useRBACStore((state) => state.requestKocAccess);
   const isKocAccessApproved = useRBACStore((state) => state.isKocAccessApproved);
   const hasPendingRequest = useRBACStore((state) => state.hasPendingRequest);
 
-  const columns: TableColumnsType<KOCRecord> = [
+  const isAdmin = canViewPrivateKOCFields(activeRole);
+  const isBrand = isBrandRole(activeRole);
+
+  // ── SHARED COLUMNS (Brand + Admin đều thấy) ─────────────────────────────────
+  const sharedColumns: TableColumnsType<KOCRecord> = [
     {
-      title: "KOC & Liên hệ",
+      title: "Tên nhà sáng tạo",
       key: "koc",
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (_, record) => {
@@ -69,11 +79,19 @@ export function KOCTable({
               >
                 {record.name} {record.gender && <Tag style={{ fontSize: 10 }}>{record.gender}</Tag>}
               </div>
-
-              {/* Email & Phone display logic per RBAC Role */}
-              {activeRole === "ADMIN" ? (
+              {/* Tài khoản TikTok / handle — show cho cả Brand */}
+              {record.tiktokAccount && (
                 <div style={{ fontSize: 12, color: "#8c8c8c" }}>
-                  📧 {record.email} {record.phone ? `| 📞 ${record.phone}` : ""}
+                  🎵 {record.tiktokAccount}
+                </div>
+              )}
+
+              {/* Email & Phone display logic per RBAC Role — Admin only */}
+              {isAdmin ? (
+                <div style={{ fontSize: 12, color: "#595959", marginTop: 2 }}>
+                  📧 {record.email}{record.phone ? ` | 📞 ${record.phone}` : ""}
+                  {record.zalo ? ` | 💬 Zalo: ${record.zalo}` : ""}
+                  {record.facebook ? ` | Facebook: ${record.facebook}` : ""}
                 </div>
               ) : activeRole === "SALES" ? (
                 <Tooltip title="Sales Account không được phép xem Email, SĐT, Zalo của KOC">
@@ -135,7 +153,7 @@ export function KOCTable({
       ),
     },
     {
-      title: "Tier & Follow",
+      title: "Tier & Lượng theo dõi",
       key: "tierFollow",
       sorter: (a, b) => a.followers - b.followers,
       render: (_, record) => (
@@ -152,19 +170,7 @@ export function KOCTable({
       ),
     },
     {
-      title: "Đặc điểm & Địa chỉ",
-      key: "nicheCity",
-      render: (_, record) => (
-        <div>
-          {record.category && <Tag color="blue">{record.category}</Tag>}
-          <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
-            📍 {record.city || "Chưa cập nhật"}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Doanh số GMV",
+      title: "Doanh số (₫)",
       dataIndex: "gmv",
       key: "gmv",
       align: "right",
@@ -176,7 +182,16 @@ export function KOCTable({
       ),
     },
     {
-      title: "ER (%)",
+      title: "Giá bán TB",
+      dataIndex: "avgPrice",
+      key: "avgPrice",
+      align: "right",
+      render: (v?: number) => (
+        <span style={{ fontSize: 12 }}>{v ? formatVND(v) : "—"}</span>
+      ),
+    },
+    {
+      title: "Tỷ lệ tương tác",
       dataIndex: "engagementRate",
       key: "engagementRate",
       align: "center",
@@ -185,6 +200,193 @@ export function KOCTable({
         <Tag color={er >= 10 ? "green" : er >= 5 ? "blue" : "orange"}>
           {er.toFixed(1)}%
         </Tag>
+      ),
+    },
+    {
+      title: "DS Livestream",
+      dataIndex: "livestreamRevenue",
+      key: "livestreamRevenue",
+      align: "right",
+      render: (v?: number) => (
+        <span style={{ fontSize: 12, color: "#fa541c" }}>
+          {v ? formatVND(v) : "—"}
+        </span>
+      ),
+    },
+    {
+      title: "DS Video",
+      dataIndex: "videoRevenue",
+      key: "videoRevenue",
+      align: "right",
+      render: (v?: number) => (
+        <span style={{ fontSize: 12, color: "#1890ff" }}>
+          {v ? formatVND(v) : "—"}
+        </span>
+      ),
+    },
+    {
+      title: "Lượt xem",
+      dataIndex: "totalViews",
+      key: "totalViews",
+      align: "right",
+      sorter: (a, b) => (a.totalViews || 0) - (b.totalViews || 0),
+      render: (v?: number) => (
+        <span style={{ fontSize: 12 }}>
+          {v ? v.toLocaleString("vi-VN") : "—"}
+        </span>
+      ),
+    },
+    {
+      title: "Link TikTok",
+      dataIndex: "tiktokLink",
+      key: "tiktokLink",
+      render: (link?: string) =>
+        link ? (
+          <a href={link} target="_blank" rel="noopener noreferrer">
+            <LinkOutlined /> TikTok
+          </a>
+        ) : (
+          <span style={{ color: "#bfbfbf" }}>—</span>
+        ),
+    },
+  ];
+
+  // ── ADMIN-ONLY COLUMNS (chỉ Admin thấy, ẩn với Brand) ──────────────────────
+  const adminOnlyColumns: TableColumnsType<KOCRecord> = [
+    {
+      title: "GMV / Khách hàng",
+      dataIndex: "gmvPerCustomer",
+      key: "gmvPerCustomer",
+      align: "right",
+      render: (v?: number) => (
+        <span style={{ fontSize: 12 }}>{v ? formatVND(v) : "—"}</span>
+      ),
+    },
+    {
+      title: "GPM (₫ / 1000 view)",
+      dataIndex: "gpm",
+      key: "gpm",
+      align: "right",
+      render: (v?: number) => (
+        <span style={{ fontSize: 12 }}>{v ? formatVND(v) : "—"}</span>
+      ),
+    },
+    {
+      title: "GMV theo danh mục",
+      dataIndex: "gmvByCategory",
+      key: "gmvByCategory",
+      render: (v?: string) => (
+        <Tooltip title={v}>
+          <span style={{ fontSize: 11 }}>{v ? (v.length > 25 ? v.slice(0, 25) + "…" : v) : "—"}</span>
+        </Tooltip>
+      ),
+    },
+    {
+      title: "GMV theo kênh",
+      dataIndex: "gmvPerChannel",
+      key: "gmvPerChannel",
+      render: (v?: string) => (
+        <span style={{ fontSize: 11 }}>{v || "—"}</span>
+      ),
+    },
+    {
+      title: "Giới tính Followers",
+      key: "followersGender",
+      render: (_, record) => {
+        const g = record.followersGender;
+        if (!g) return <span style={{ color: "#bfbfbf" }}>—</span>;
+        return (
+          <div style={{ fontSize: 11 }}>
+            <div>👨 {g.male}%</div>
+            <div>👩 {g.female}%</div>
+          </div>
+        );
+      },
+    },
+    {
+      title: "Độ tuổi Followers",
+      key: "followersAge",
+      render: (_, record) => {
+        const a = record.followersAge;
+        if (!a) return <span style={{ color: "#bfbfbf" }}>—</span>;
+        const peak = Object.entries(a).sort((x, y) => (y[1] ?? 0) - (x[1] ?? 0))[0];
+        return (
+          <Tooltip
+            title={
+              <div>
+                {Object.entries(a).map(([k, v]) => (
+                  <div key={k}>{k}: {v}%</div>
+                ))}
+              </div>
+            }
+          >
+            <Tag color="geekblue" style={{ fontSize: 11 }}>
+              {peak ? `${peak[0]}: ${peak[1]}%` : "—"}
+            </Tag>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: "Top 5 Tỉnh/TP",
+      dataIndex: "top5Locations",
+      key: "top5Locations",
+      render: (locs?: string[]) =>
+        locs && locs.length > 0 ? (
+          <Tooltip title={locs.join(", ")}>
+            <div style={{ fontSize: 11 }}>
+              {locs.slice(0, 2).map((l, i) => (
+                <div key={i}>📍 {l}</div>
+              ))}
+              {locs.length > 2 && <div style={{ color: "#8c8c8c" }}>+{locs.length - 2} nơi khác</div>}
+            </div>
+          </Tooltip>
+        ) : (
+          <span style={{ color: "#bfbfbf" }}>—</span>
+        ),
+    },
+    {
+      title: "Địa chỉ nhận hàng",
+      dataIndex: "sampleAddress",
+      key: "sampleAddress",
+      render: (v?: string) => (
+        <Tooltip title={v}>
+          <span style={{ fontSize: 11 }}>
+            {v ? (v.length > 20 ? v.slice(0, 20) + "…" : v) : "—"}
+          </span>
+        </Tooltip>
+      ),
+    },
+    {
+      title: "Tài khoản NH",
+      dataIndex: "bankAccount",
+      key: "bankAccount",
+      render: (v?: string) => (
+        <span style={{ fontSize: 11, fontFamily: "monospace" }}>{v || "—"}</span>
+      ),
+    },
+    {
+      title: "Độ tuổi con",
+      dataIndex: "childrenAge",
+      key: "childrenAge",
+      render: (v?: string) => (
+        <span style={{ fontSize: 11 }}>{v || "—"}</span>
+      ),
+    },
+  ];
+
+  // ── STATUS & CATEGORY (shared) ──────────────────────────────────────────────
+  const statusCategoryColumns: TableColumnsType<KOCRecord> = [
+    {
+      title: "Đặc điểm & Địa chỉ",
+      key: "nicheCity",
+      render: (_, record) => (
+        <div>
+          {record.category && <Tag color="blue">{record.category}</Tag>}
+          <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
+            📍 {record.city || "Chưa cập nhật"}
+          </div>
+        </div>
       ),
     },
     {
@@ -201,6 +403,10 @@ export function KOCTable({
         <Tag color={getStatusColor(status)}>{status}</Tag>
       ),
     },
+  ];
+
+  // ── ACTION COLUMN (không show cho Brand) ───────────────────────────────────
+  const actionColumn: TableColumnsType<KOCRecord> = [
     {
       title: "Hành Động",
       key: "action",
@@ -214,7 +420,7 @@ export function KOCTable({
             </Tooltip>
           )}
 
-          {activeRole === "ADMIN" && (
+          {isAdmin && (
             <>
               <Button type="primary" size="small" onClick={() => onEdit(record)}>
                 Sửa
@@ -238,6 +444,14 @@ export function KOCTable({
     },
   ];
 
+  // ── Compose final columns by role ───────────────────────────────────────────
+  const columns: TableColumnsType<KOCRecord> = [
+    ...sharedColumns,
+    ...(isAdmin ? adminOnlyColumns : []),
+    ...statusCategoryColumns,
+    ...(!isBrand ? actionColumn : []),
+  ];
+
   return (
     <Table<KOCRecord>
       rowSelection={{
@@ -255,6 +469,7 @@ export function KOCTable({
       }}
       bordered
       size="middle"
+      scroll={{ x: isAdmin ? 2000 : 1200 }}
     />
   );
 }

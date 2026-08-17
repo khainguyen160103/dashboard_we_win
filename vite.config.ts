@@ -15,4 +15,15 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      // Proxy /kalodata-api/* → https://www.kalodata.com/* để bypass CORS khi dev
+      "/kalodata-api": {
+        target: "https://www.kalodata.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/kalodata-api/, ""),
+        secure: true,
+      },
+    },
+  },
 });

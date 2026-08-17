@@ -11,7 +11,7 @@ import {
   LockIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import { useAuthStore } from "../hooks/store/useAuthStore";
+import { authStore } from "../store/authStore";
 import { getActiveUserRole, RoleType } from "../utils/rbac";
 
 type NavItem = {
@@ -33,6 +33,12 @@ const allNavItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "Quản lý KOC",
     path: "/koc",
+    roles: ["ADMIN", "SALES", "PM"],
+  },
+  {
+    icon: <GridIcon />,
+    name: "Kalodata Ranking",
+    path: "/kalodata",
     roles: ["ADMIN", "SALES", "PM"],
   },
   {
@@ -69,7 +75,7 @@ const allNavItems: NavItem[] = [
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const user = useAuthStore((state) => state.user);
+  const user = authStore((state) => state.user);
   const location = useLocation();
 
   // Tự động kiểm tra role của người dùng đang đăng nhập
