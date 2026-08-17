@@ -12,7 +12,6 @@ import PermissionManagement from "./pages/PermissionManagement";
 import Calendar from "./pages/Calendar";
 import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
-import { ScrollToTop } from "./components/common/ScrollToTop";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminPage from "./pages/Admin/AdminPage";
 import KalodataCreator from "./pages/KalodataCreator";
