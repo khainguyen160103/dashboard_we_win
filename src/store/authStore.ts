@@ -46,11 +46,18 @@ export const authStore = create<AuthStore>()(
       can : (resource: string, action:string) =>  { 
         return get().user?.permissions?.includes(`${resource}:${action}`)
       }, 
-      hasRole: (role: string[]) => { 
-        const {user} = get();
-        return role.some((r) => user?.roles?.includes(r))
-      }
-      , 
+      hasRole: (roles: string[]) => { 
+        const { user } = get();
+        if (!user?.roles) return false;
+        return roles.some((r) =>
+          user.roles?.some(
+            (userRole: any) =>
+              typeof userRole === "string"
+                ? userRole === r
+                : userRole?.code === r || userRole?.name === r || userRole?.id === r,
+          ),
+        );
+      },
       hasPermission : (permission: string[]) => { 
         const {user} = get(); 
         return permission.some( p => user?.permissions?.includes(p))

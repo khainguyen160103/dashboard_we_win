@@ -107,6 +107,7 @@ export default function CampaignManagement() {
 
     const payload = {
       name: values.name,
+      code: values.name.toLowerCase().replace(/[^a-z0-9]/g, "-") || `cmp-${Date.now()}`,
       description: values.description,
       brandName: values.brandName,
       category: values.category,

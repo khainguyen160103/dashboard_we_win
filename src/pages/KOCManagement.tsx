@@ -91,21 +91,19 @@ const mapKalodataToKOCRecord = (creator: KalodataCreator, index: number): KOCRec
 
 // Predicate to check if a user record has the "KOC" role
 const isKOCUser = (u: User & Record<string, unknown>): boolean => {
-  if (u.roleId === KOC_ROLE_ID || u.roleId === "KOC") return true;
-  if (u.role === "KOC" || u.role === KOC_ROLE_ID) return true;
+  if (u.roleId === KOC_ROLE_ID || String(u.roleId) === "KOC") return true;
   if (Array.isArray(u.roles)) {
-    return u.roles.some(
-      (r) =>
-        r === "KOC" ||
-        r === KOC_ROLE_ID ||
-        (typeof r === "object" && r !== null && ((r as Record<string, unknown>).code === "KOC" || (r as Record<string, unknown>).id === KOC_ROLE_ID))
-    );
+    return u.roles.some((r: unknown) => {
+      if (typeof r === "string") return r === "KOC" || r === KOC_ROLE_ID;
+      if (typeof r === "object" && r !== null) {
+        const rObj = r as Record<string, unknown>;
+        return rObj.code === "KOC" || rObj.name === "KOC" || rObj.id === KOC_ROLE_ID;
+      }
+      return false;
+    });
   }
   if (Array.isArray(u.roleIds)) {
     return u.roleIds.some((r) => String(r) === KOC_ROLE_ID || String(r) === "KOC");
-  }
-  if (typeof u.role === "object" && u.role !== null && (u.role as Record<string, unknown>).code === "KOC") {
-    return true;
   }
   return false;
 };
@@ -152,6 +150,8 @@ export default function KOCManagement() {
   // ── Kalodata Creator Query ──
   const { data: kalodataResponse, isLoading: isLoadingKalodata } = useKalodataCreators({
     region: "VN",
+    language: "vi-VN",
+    currency: "VND",
     date_range: "last7Day",
   });
 

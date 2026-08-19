@@ -1,8 +1,8 @@
-import { Button, Popconfirm, Progress, Space, Table, Tag, Tooltip } from "antd";
+import { Button, Popconfirm, Space, Table, Tag, Tooltip } from "antd";
 import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import type { Campaign } from "./types";
-import { getCampaignStatusColor, getCampaignStatusLabel, formatVND } from "./campaign.utils";
+import { getCampaignStatusColor, getCampaignStatusLabel } from "./campaign.utils";
 
 interface CampaignTableProps {
   campaigns: Campaign[];

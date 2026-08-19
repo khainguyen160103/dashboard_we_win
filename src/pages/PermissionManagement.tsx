@@ -134,7 +134,7 @@ export default function PermissionManagement() {
         // roles là Role[] từ backend
         assignedRoles = u.roles.map((r) =>
           typeof r === "object" && r !== null
-            ? ((r as Record<string, string>).id ?? (r as Record<string, string>).code ?? "")
+            ? ((r as unknown as Record<string, string>).id ?? (r as unknown as Record<string, string>).code ?? "")
             : String(r),
         );
       } else if (typeof uObj.roleId === "string") {

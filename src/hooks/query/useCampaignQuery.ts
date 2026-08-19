@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import campaignService from "../../services/campaign.service";
-import type { CampaignPayload, InviteKocPayload } from "../../services/campaign.service";
+import { campaignService } from "../../services/campaign.service";
+import type { CampaignPayload } from "../../services/campaign.service";
 import { queryKeys } from "./queryKeys";
 
 type CampaignListParams = { page?: number; limit?: number; q?: string; status?: string };
@@ -61,8 +61,8 @@ export const useInviteKocMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ campaignId, payload }: { campaignId: string; payload: InviteKocPayload }) =>
-      campaignService.inviteKocs(campaignId, payload),
+    mutationFn: ({ campaignId, payload }: { campaignId: string; payload: { kocId: string; note?: string } }) =>
+      campaignService.inviteKoc(campaignId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.lists() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.lists() });

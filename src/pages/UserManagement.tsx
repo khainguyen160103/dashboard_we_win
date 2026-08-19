@@ -51,35 +51,6 @@ type UserFormValues = {
   status: string;
 };
 
-const getRoleColor = (roleStr: string, rolesList: Role[]) => {
-  const matched = rolesList.find(
-    (r) => r.id === roleStr || r.code === roleStr || r.name === roleStr
-  );
-  const code = matched ? matched.code : roleStr;
-  switch (code?.toUpperCase()) {
-    case "ADMIN":
-      return "red";
-    case "PM":
-      return "blue";
-    case "KOC":
-      return "green";
-    case "SA":
-    case "SALEACCOUNT":
-      return "orange";
-    case "BRAND":
-      return "purple";
-    default:
-      return "default";
-  }
-};
-
-const getRoleLabel = (roleStr: string, rolesList: Role[]) => {
-  const matched = rolesList.find(
-    (r) => r.id === roleStr || r.code === roleStr || r.name === roleStr
-  );
-  return matched ? `${matched.name} (${matched.code})` : roleStr;
-};
-
 const getStatusColor = (status: string) => {
   const s = status?.toUpperCase();
   return s === "ACTIVE" || s === "SUCCESS" ? "success" : "default";
