@@ -1,4 +1,7 @@
+import type { Role } from "./Role";
+
 export type User = {
+
   // Core identity
   id: string;
   username?: string;
@@ -7,7 +10,7 @@ export type User = {
   roleId?: string;
 
   // Roles & permissions (from backend JWT/response)
-  roles?: string[];
+  roles?: Role[];
   permissions?: string[];
   admin?: boolean;
   isAdmin?: boolean; // alias from JWT claims

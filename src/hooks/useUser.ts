@@ -41,6 +41,18 @@ export const useUpdateUserMutation = () => {
     },
   });
 };
+export const useUpdateStatusUserMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<User> }) =>
+      userService.updateStatus(id, payload),
+    onSuccess: (updatedUser) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      queryClient.setQueryData(queryKeys.users.detail(updatedUser.id), updatedUser);
+    },
+  });
+}
 
 export const useDeleteUserMutation = () => {
   const queryClient = useQueryClient();
@@ -54,6 +66,19 @@ export const useDeleteUserMutation = () => {
   });
 };
 
+export const useAssignRolesToUserMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, roleIds }: { id: string; roleIds: string[] }) =>
+      userService.assignRoles(id, roleIds),
+    onSuccess: (updatedUser) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      queryClient.setQueryData(queryKeys.users.detail(updatedUser.id), updatedUser);
+    },
+  });
+};
+
 /**
  * Combined custom hook `useUsers` for convenience
  */
@@ -62,16 +87,18 @@ export const useUsers = (params?: UserListParams) => {
   const createMutation = useCreateUserMutation();
   const updateMutation = useUpdateUserMutation();
   const deleteMutation = useDeleteUserMutation();
-
+  const updateStatusUserMutation = useUpdateStatusUserMutation();
   return {
     ...query,
     users: query.data ?? [],
     createUser: createMutation.mutateAsync,
     updateUser: updateMutation.mutateAsync,
     deleteUser: deleteMutation.mutateAsync,
+    updateStatusUser: updateStatusUserMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    isUpdateStatusUser: updateStatusUserMutation.isPending,
   };
 };
 

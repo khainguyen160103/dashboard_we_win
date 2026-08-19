@@ -1,3 +1,5 @@
+import type { Permission } from "./Permission";
+
 export interface Role {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ export interface Role {
   description?: string | null;
   system?: boolean;
   isSystem?: boolean;
+  permissions?: Permission[];
   createdAt?: string | Date;
   updatedAt?: string | Date;
   createdBy?: string | null;

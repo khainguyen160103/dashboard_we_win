@@ -1,20 +1,5 @@
 import axios from "axios";
-import { AUTH_STORAGE_KEY } from "../constants/storage";
-
-const getStoredAccessToken = (): string | null => {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw) as { state?: { accessToken?: string } };
-    return parsed.state?.accessToken ?? null;
-  } catch {
-    return null;
-  }
-};
-
+import { authStore } from "../store/authStore";
 export const api = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
   timeout: 10000,
@@ -23,15 +8,21 @@ export const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token = getStoredAccessToken();
+api.interceptors.request.use(
+  (config) => {
+    const accessToken = authStore.getState().accessToken;
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+    console.log("token: ", accessToken);
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
 
-  return config;
-});
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 
 const axiosClient = api;
 

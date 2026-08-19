@@ -214,9 +214,6 @@ export function CampaignDetailDrawer({
             {new Date(campaign.startDate).toLocaleDateString("vi-VN")} -{" "}
             {new Date(campaign.endDate).toLocaleDateString("vi-VN")}
           </Descriptions.Item>
-          <Descriptions.Item label="Ngân sách">
-            <strong>{formatVND(campaign.budget)}</strong>
-          </Descriptions.Item>
         </Descriptions>
 
         {campaign.description && (

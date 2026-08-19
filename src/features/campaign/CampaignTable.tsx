@@ -8,7 +8,7 @@ interface CampaignTableProps {
   campaigns: Campaign[];
   onViewDetail: (campaign: Campaign) => void;
   onEdit: (campaign: Campaign) => void;
-  onDelete: (campaignId: number) => void;
+  onDelete: (campaignId: number | string) => void;
 }
 
 export function CampaignTable({
@@ -54,22 +54,6 @@ export function CampaignTable({
           {new Date(record.startDate).toLocaleDateString("vi-VN")} - {new Date(record.endDate).toLocaleDateString("vi-VN")}
         </div>
       ),
-    },
-    {
-      title: "Ngân sách (Đã chi / Tổng)",
-      key: "budget",
-      width: 220,
-      render: (_, record) => {
-        const percent = record.budget > 0 ? Math.round((record.spent / record.budget) * 100) : 0;
-        return (
-          <div>
-            <div style={{ fontSize: 12 }}>
-              {formatVND(record.spent)} / {formatVND(record.budget)}
-            </div>
-            <Progress percent={percent} size="small" status={percent > 100 ? "exception" : "normal"} />
-          </div>
-        );
-      },
     },
     {
       title: "KOC Tham Gia",

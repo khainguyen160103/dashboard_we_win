@@ -24,6 +24,7 @@ import {
   useMyJobsQuery,
   useSubmitVideoMutation,
   useReviewVideoMutation,
+  useRespondJobMutation,
 } from "../hooks/query/useJobQuery";
 
 export default function JobReview() {
@@ -32,15 +33,14 @@ export default function JobReview() {
   // Tự động kiểm tra Role người dùng đăng nhập từ Auth Store / JWT
   const activeRole = useMemo(() => getActiveUserRole(user), [user]);
 
-
   // REST API hooks for Job Review
   const isKocUser = activeRole === "KOC";
   const { data: apiJobs, isLoading: isLoadingAllJobs, isFetching: isFetchingAllJobs } = useJobsQuery(undefined, { enabled: !isKocUser });
   const { data: apiMyJobs, isLoading: isLoadingMyJobs } = useMyJobsQuery({ enabled: isKocUser });
 
-
   const submitVideoMutation = useSubmitVideoMutation();
   const reviewVideoMutation = useReviewVideoMutation();
+  const respondJobMutation = useRespondJobMutation();
 
   // Modals state
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -75,6 +75,11 @@ export default function JobReview() {
         else if (qRating === "DAT" || qRating === "AVERAGE") quality = "Average";
         else if (qRating === "KEM" || qRating === "POOR") quality = "Poor";
 
+        const invStatus = (j.invitationStatus || "").toUpperCase();
+        let invitationStatus: JobRecord["invitationStatus"] = "ACCEPTED";
+        if (invStatus === "INVITED") invitationStatus = "INVITED";
+        else if (invStatus === "REJECTED") invitationStatus = "REJECTED";
+
         return {
           id: String(j.id),
           campaignId: j.campaignId || 1,
@@ -90,6 +95,7 @@ export default function JobReview() {
           description: j.description || "",
           videoUrl: j.videoUrl || undefined,
           status,
+          invitationStatus,
           quality,
           pmFeedback: j.pmFeedback || "",
           submittedDate: j.submittedAt ? new Date(j.submittedAt).toISOString().split("T")[0] : undefined,
@@ -169,6 +175,23 @@ export default function JobReview() {
     }
   };
 
+  // ── KOC Invitation Response Handler (PUT /jobs/{jobId}/respond) ──
+  const handleRespondInvitation = async (job: JobRecord, action: "ACCEPT" | "REJECT") => {
+    try {
+      await respondJobMutation.mutateAsync({
+        jobId: String(job.id),
+        payload: { action },
+      });
+      message.success(
+        action === "ACCEPT"
+          ? `Đã đồng ý tham gia chiến dịch "${job.campaignName}"!`
+          : `Đã từ chối lời mời tham gia chiến dịch "${job.campaignName}"!`
+      );
+    } catch {
+      message.error("Có lỗi xảy ra khi phản hồi lời mời!");
+    }
+  };
+
   // ── KOC Info Handler ──
   const handleOpenKocModal = (job: JobRecord) => {
     setSelectedJob(job);
@@ -191,9 +214,8 @@ export default function JobReview() {
         {activeRole === "KOC" ? (
           <JobKOCView
             jobs={jobsList}
-            activeKocId={1}
-            onChangeActiveKoc={() => { }}
             onOpenUploadModal={handleOpenUploadModal}
+            onRespondInvitation={handleRespondInvitation}
           />
         ) : (
           <JobPMView

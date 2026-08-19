@@ -24,6 +24,7 @@ export type JobRecord = {
   videoUrl?: string;
   videoFileName?: string;
   status: JobStatus;
+  invitationStatus?: "INVITED" | "ACCEPTED" | "REJECTED";
   quality?: QualityRating;
   submittedDate?: string;
   approvedDate?: string;

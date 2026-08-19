@@ -1,4 +1,4 @@
-import { DatePicker, Form, Input, InputNumber, Modal, Select } from "antd";
+import { DatePicker, Form, Input, Modal, Select } from "antd";
 import type { Campaign, CampaignFormValues } from "./types";
 import { CATEGORY_OPTIONS } from "./campaign.utils";
 
@@ -25,7 +25,6 @@ export function CampaignFormModal({
         description: editingCampaign.description,
         brandName: editingCampaign.brandName,
         category: editingCampaign.category,
-        budget: editingCampaign.budget,
         status: editingCampaign.status,
         dateRange: [
           editingCampaign.startDate,
@@ -87,20 +86,6 @@ export function CampaignFormModal({
           rules={[{ required: true, message: "Vui lòng chọn thời gian" }]}
         >
           <DatePicker.RangePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-        </Form.Item>
-
-        <Form.Item
-          label="Ngân sách (VND)"
-          name="budget"
-          rules={[{ required: true, message: "Vui lòng nhập ngân sách" }]}
-        >
-          <InputNumber
-            min={0}
-            step={1_000_000}
-            style={{ width: "100%" }}
-            formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-            addonAfter="₫"
-          />
         </Form.Item>
 
         <Form.Item label="Trạng thái" name="status" initialValue="Draft" rules={[{ required: true }]}>

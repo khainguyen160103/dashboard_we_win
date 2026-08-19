@@ -31,13 +31,21 @@ export const useAuth = () => {
     },
   });
   const useLogout = useMutation({
-    mutationFn: async () => await authService.logout(),
+    mutationFn: async () => {
+      const refreshToken = authStore.getState().refreshToken;
+      if (!refreshToken) {
+        message.error("Refresh token is missing");
+        return false;
+      }
+      return await authService.logout(refreshToken);
+    },
     onSuccess: () => {
       message.success("Đăng xuất thành công!");
       navigate("/signin");
       clearAuth();
       localStorageUtils.removeItem(keyStore.Auth);
     },
+
     onError: (error) => {
       console.log("error: ", error);
       message.error(`${error.message}`);

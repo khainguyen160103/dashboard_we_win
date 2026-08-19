@@ -47,7 +47,17 @@ export const userService = {
   },
 
   update: async (id: string, payload: Partial<User>): Promise<User> => {
-    const { data } = await axiosClient.put<any>(`/users/${id}`, payload);
+    const { data } = await axiosClient.patch<any>(`/users/${id}`, payload);
+    return data?.data ?? data;
+  },
+
+  updateStatus: async (id: string, payload: Partial<User>): Promise<User> => {
+    const { data } = await axiosClient.patch<any>(`/users/${id}/status`, payload);
+    return data?.data ?? data;
+  },
+
+  assignRoles: async (id: string, roleIds: string[]): Promise<User> => {
+    const { data } = await axiosClient.put<any>(`/users/${id}/roles`, { roleIds });
     return data?.data ?? data;
   },
 

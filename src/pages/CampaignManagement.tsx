@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Button, Card, Flex, Input, Statistic, Spin, message } from "antd";
-import { PlusOutlined, SearchOutlined, RocketOutlined, CheckCircleOutlined, ClockCircleOutlined, DollarOutlined } from "@ant-design/icons";
+import { PlusOutlined, SearchOutlined, RocketOutlined, CheckCircleOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 
@@ -9,7 +9,6 @@ import {
   CampaignFormModal,
   CampaignDetailDrawer,
   initialMockCampaigns,
-  formatVND,
 } from "../features/campaign";
 
 import type {
@@ -52,20 +51,34 @@ export default function CampaignManagement() {
       else if (Array.isArray(resObj.data)) rawList = resObj.data;
     }
 
-    if (rawList.length > 0) {
-      return rawList.map((c) => ({
-        id: c.id,
-        name: c.name || "N/A",
-        description: c.description || "",
-        brandName: c.brandName || "Cocoon Vietnam",
-        category: c.category || "Mỹ phẩm & Làm đẹp",
-        budget: Number(c.budget ?? 50000000),
-        spent: Number(c.spent ?? 0),
-        status: c.status?.toUpperCase() === "INACTIVE" ? "Draft" : c.status?.toUpperCase() === "COMPLETED" ? "Completed" : "Active",
-        startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : "2026-06-01",
-        endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "2026-06-30",
-        kocs: Array.isArray(c.kocs) ? c.kocs : [],
-      }));
+    if (apiCampaigns !== undefined) {
+      const mappedApiList: Campaign[] = rawList.map((c) => {
+        const rawStatus = (c.status || "ACTIVE").toString().toUpperCase();
+        const status: "Active" | "Draft" | "Completed" =
+          rawStatus === "DRAFT" || rawStatus === "INACTIVE"
+            ? "Draft"
+            : rawStatus === "COMPLETED"
+            ? "Completed"
+            : "Active";
+
+        return {
+          id: c.id,
+          name: c.name || "N/A",
+          description: c.description || "",
+          brandName: c.brandName || "Cocoon Vietnam",
+          category: c.category || "Mỹ phẩm & Làm đẹp",
+          status,
+          startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : "2026-06-01",
+          endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "2026-06-30",
+          kocs: Array.isArray(c.kocs) ? c.kocs : [],
+        };
+      });
+
+      // Show API campaigns, and append initial mock campaigns if API returns empty database
+      if (mappedApiList.length === 0) {
+        return initialMockCampaigns;
+      }
+      return mappedApiList;
     }
 
     return initialMockCampaigns;
@@ -99,7 +112,6 @@ export default function CampaignManagement() {
       category: values.category,
       startDate: isoStart,
       endDate: isoEnd,
-      budget: Number(values.budget),
       status: values.status === "Active" ? "ACTIVE" : values.status === "Draft" ? "DRAFT" : "COMPLETED",
     };
 
@@ -146,7 +158,6 @@ export default function CampaignManagement() {
 
   // Top summary metrics
   const activeCount = campaignsList.filter((c) => c.status === "Active").length;
-  const totalBudget = campaignsList.reduce((sum, c) => sum + c.budget, 0);
   const totalKocsInvited = campaignsList.reduce((sum, c) => sum + c.kocs.length, 0);
 
   return (
@@ -170,14 +181,6 @@ export default function CampaignManagement() {
           </Card>
           <Card size="small" style={{ flex: 1 }}>
             <Statistic title="Tổng KOC Tham Gia" value={totalKocsInvited} prefix={<ClockCircleOutlined />} />
-          </Card>
-          <Card size="small" style={{ flex: 1.2 }}>
-            <Statistic
-              title="Tổng Ngân Sách"
-              value={formatVND(totalBudget)}
-              valueStyle={{ color: "#1890ff", fontSize: 18 }}
-              prefix={<DollarOutlined />}
-            />
           </Card>
         </Flex>
 

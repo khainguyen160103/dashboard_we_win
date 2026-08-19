@@ -61,3 +61,15 @@ export const useDeleteRoleMutation = () => {
     },
   });
 };
+
+export const useAssignPermissionsToRoleMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (entries: { roleId: string; permissionId: string }[]) =>
+      roleService.assignPermissions(entries),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.roles.lists() });
+    },
+  });
+};

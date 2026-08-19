@@ -8,8 +8,6 @@ export const initialMockCampaigns: Campaign[] = [
     status: "Active",
     startDate: "2024-06-01",
     endDate: "2024-08-31",
-    budget: 25_000_000,
-    spent: 18_500_000,
     category: "Beauty",
     brandName: "Cocoon Vietnam",
     kocs: [
@@ -26,8 +24,6 @@ export const initialMockCampaigns: Campaign[] = [
     status: "Active",
     startDate: "2024-07-15",
     endDate: "2024-09-15",
-    budget: 30_000_000,
-    spent: 22_000_000,
     category: "Tech",
     brandName: "Samsung Vietnam",
     kocs: [
@@ -43,8 +39,6 @@ export const initialMockCampaigns: Campaign[] = [
     status: "Draft",
     startDate: "2024-11-01",
     endDate: "2024-12-25",
-    budget: 50_000_000,
-    spent: 0,
     category: "Fashion",
     brandName: "Uniqlo Vietnam",
     kocs: [],
@@ -56,8 +50,6 @@ export const initialMockCampaigns: Campaign[] = [
     status: "Completed",
     startDate: "2024-05-01",
     endDate: "2024-05-07",
-    budget: 15_000_000,
-    spent: 15_000_000,
     category: "F&B",
     brandName: "Highlands Coffee",
     kocs: [
@@ -72,8 +64,6 @@ export const initialMockCampaigns: Campaign[] = [
     status: "Active",
     startDate: "2024-06-20",
     endDate: "2024-10-20",
-    budget: 40_000_000,
-    spent: 28_000_000,
     category: "Beauty",
     brandName: "La Roche-Posay",
     kocs: [

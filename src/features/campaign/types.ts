@@ -45,8 +45,6 @@ export type Campaign = {
   status: CampaignStatus;
   startDate: string;
   endDate: string;
-  budget: number;
-  spent: number;
   category?: string;
   brandName?: string;
   kocs: CampaignKOC[];
@@ -59,7 +57,6 @@ export type CampaignFormValues = {
   brandName?: string;
   category?: string;
   dateRange: [string, string];
-  budget: number;
   status: CampaignStatus;
 };
 

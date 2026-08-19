@@ -25,7 +25,6 @@ import { useRolesQuery } from "../hooks/query/useRoleQuery";
 import type { User } from "../model/User";
 import type { Role } from "../model/Role";
 
-// Fallback roles array in case REST API is initializing
 const FALLBACK_ROLES: Role[] = [
   { id: "a1000000-0000-0000-0000-000000000001", name: "Administrator", code: "ADMIN", description: "Full system access" },
   { id: "a1000000-0000-0000-0000-000000000002", name: "PM", code: "PM", description: "Manage job information" },
@@ -35,7 +34,7 @@ const FALLBACK_ROLES: Role[] = [
 ];
 
 type UserRecord = {
-  id: string | number;
+  id: string;
   name: string;
   email: string;
   roleId: string;
@@ -48,7 +47,7 @@ type UserRecord = {
 type UserFormValues = {
   name: string;
   email: string;
-  role: string; // roleId (UUID string)
+  role: string;
   status: string;
 };
 
@@ -127,7 +126,7 @@ function UserModal({
         onSubmit(values);
         form.resetFields();
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   return (
@@ -139,7 +138,6 @@ function UserModal({
       okText={isEditing ? "Lưu thay đổi" : "Thêm mới"}
       cancelText="Hủy"
       afterOpenChange={handleAfterOpen}
-      destroyOnClose
       width={520}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
@@ -250,9 +248,12 @@ export default function UserManagement() {
         } else if (u.admin || u.isAdmin) {
           roleId = "a1000000-0000-0000-0000-000000000001";
         } else if (Array.isArray(u.roles) && u.roles.length > 0) {
-          const firstRole = String(u.roles[0]);
+          const firstRole = u.roles[0];
+          const firstRoleStr = typeof firstRole === "object" && firstRole !== null
+            ? (firstRole.id ?? firstRole.code ?? "")
+            : String(firstRole);
           const matched = rolesList.find(
-            (r) => r.id === firstRole || r.code === firstRole || r.name === firstRole
+            (r) => r.id === firstRoleStr || r.code === firstRoleStr || r.name === firstRoleStr
           );
           if (matched) roleId = matched.id;
         }
@@ -288,6 +289,7 @@ export default function UserManagement() {
   };
 
   const handleOpenEdit = (record: UserRecord) => {
+    console.log(record);
     setEditingUser(record);
     setModalOpen(true);
   };
@@ -296,7 +298,10 @@ export default function UserManagement() {
     setModalOpen(false);
     setEditingUser(null);
   };
-
+  const handleUpdateStatus = (userId: string, status: string) => {
+    const payload = status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    updateUserMutation.mutate({ id: userId, payload: { status: payload } });
+  };
   const handleSubmit = async (values: UserFormValues) => {
     const selectedRoleId = values.role; // Role UUID string
     const formattedStatus = values.status?.toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE";
@@ -349,25 +354,25 @@ export default function UserManagement() {
       dataIndex: "email",
       key: "email",
     },
-    {
-      title: "Vai Trò",
-      dataIndex: "roleId",
-      key: "roleId",
-      filters: rolesList.map((r) => ({ text: r.name, value: r.id })),
-      onFilter: (value, record) => record.roleId === value || record.role === value,
-      render: (roleId: string, record: UserRecord) => (
-        <Tag color={getRoleColor(roleId, rolesList)}>
-          {getRoleLabel(record.roleId || record.role, rolesList)}
-        </Tag>
-      ),
-    },
+    // {
+    //   title: "Vai Trò",
+    //   dataIndex: "roleId",
+    //   key: "roleId",
+    //   filters: rolesList.map((r) => ({ text: r.name, value: r.id })),
+    //   onFilter: (value, record) => record.roleId === value || record.role === value,
+    //   render: (roleId: string, record: UserRecord) => (
+    //     <Tag color={getRoleColor(roleId, rolesList)}>
+    //       {getRoleLabel(record.roleId || record.role, rolesList)}
+    //     </Tag>
+    //   ),
+    // },
     {
       title: "Trạng Thái",
       dataIndex: "status",
       key: "status",
       filters: [
-        { text: "Active", value: "Active" },
-        { text: "Inactive", value: "Inactive" },
+        { text: "Active", value: "ACTIVE" },
+        { text: "Inactive", value: "INACTIVE" },
       ],
       onFilter: (value, record) => record.status === value,
       render: (status: string) => <Tag color={getStatusColor(status)}>{status}</Tag>,
@@ -396,8 +401,20 @@ export default function UserManagement() {
             size="small"
             onClick={() => handleOpenEdit(record)}
           >
-            Sửa
+            Xem chi tiết
           </Button>
+          <Popconfirm
+            title="Khóa tài khoản"
+            description={`Bạn có chắc muốn khóa "${record.name}"?`}
+            okText="Khóa"
+            cancelText="Hủy"
+            okType="danger"
+            onConfirm={() => handleUpdateStatus(record.id, record.status)}
+          >
+            <Button type="primary" size="small" danger loading={updateUserMutation.isPending}>
+              Khóa
+            </Button>
+          </Popconfirm>
           <Popconfirm
             title="Xóa người dùng"
             description={`Bạn có chắc muốn xóa "${record.name}"?`}

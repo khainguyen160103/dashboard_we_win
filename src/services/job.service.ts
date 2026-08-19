@@ -1,7 +1,7 @@
 import { api as axiosClient } from "../api/request";
 
 export type RespondJobPayload = {
-  action: "ACCEPT" | "DECLINE";
+  action: "ACCEPT" | "REJECT";
 };
 
 export type SubmitVideoPayload = {

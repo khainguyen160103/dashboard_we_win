@@ -35,6 +35,10 @@ export const roleService = {
     return data?.data ?? data;
   },
 
+  assignPermissions: async (entries: { roleId: string; permissionId: string }[]): Promise<void> => {
+    await axiosClient.post('/role/permission', entries);
+  },
+
   remove: async (id: string): Promise<void> => {
     await axiosClient.delete(`/roles/${id}`);
   },
