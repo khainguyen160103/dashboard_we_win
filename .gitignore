@@ -23,8 +23,7 @@ node_modules/
 *.sln
 *.sw?
 
-# Env files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Env files — KHÔNG BAO GIỜ commit lên Git!
+.env
+.env.*
+!.env.example
