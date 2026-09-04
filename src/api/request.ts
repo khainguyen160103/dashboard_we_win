@@ -1,5 +1,6 @@
 import axios from "axios";
-import { authStore } from "../store/authStore";
+import { localStorageUtils } from "../utils/localStorageUtils";
+import { keyStore } from "../enums/keyStore";
 export const api = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
   timeout: 10000,
@@ -10,9 +11,8 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const accessToken = authStore.getState().accessToken;
+    const accessToken = localStorageUtils.getItem(keyStore.ACCESS_TOKEN);
 
-    console.log("token: ", accessToken);
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }

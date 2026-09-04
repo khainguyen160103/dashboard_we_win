@@ -1,9 +1,7 @@
 import { authStore } from "../../store/authStore";
 import { useModal } from "../../hooks/useModal";
-import { Modal } from "../ui/modal";
-import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
-import Label from "../form/Label";
+import { Button, Input, Modal } from "antd";
+
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
@@ -89,7 +87,7 @@ export default function UserInfoCard() {
         </button>
       </div>
 
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
+      <Modal open={isOpen} onCancel={closeModal} className="max-w-[700px] m-4">
         <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
@@ -100,26 +98,26 @@ export default function UserInfoCard() {
             <div className="custom-scrollbar h-[300px] overflow-y-auto px-2 pb-3">
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                 <div className="col-span-2 lg:col-span-1">
-                  <Label>Họ và tên</Label>
+                  <p>Họ và tên</p>
                   <Input type="text" value={fullName} />
                 </div>
 
                 <div className="col-span-2 lg:col-span-1">
-                  <Label>Email Address</Label>
+                  <p>Email Address</p>
                   <Input type="text" value={email} />
                 </div>
 
                 <div className="col-span-2 lg:col-span-1">
-                  <Label>Số điện thoại</Label>
+                  <p>Số điện thoại</p>
                   <Input type="text" value={phone} />
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal}>
+              <Button onClick={closeModal}>
                 Đóng
               </Button>
-              <Button size="sm" onClick={handleSave}>
+              <Button onClick={handleSave}>
                 Lưu
               </Button>
             </div>

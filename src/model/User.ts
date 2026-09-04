@@ -1,7 +1,4 @@
-import type { Role } from "./Role";
-
 export type User = {
-
   // Core identity
   id: string;
   username?: string;
@@ -10,7 +7,7 @@ export type User = {
   roleId?: string;
 
   // Roles & permissions (from backend JWT/response)
-  roles?: Role[];
+  roles?: string[];
   permissions?: string[];
   admin?: boolean;
   isAdmin?: boolean; // alias from JWT claims
@@ -46,10 +43,43 @@ export type loginResponse = {
   refreshToken: string | null;
   tokenType: string | null;
   expiresIn: number | null;
-  user: User | null;
 };
 
 export type loginRequest = {
   email: string;
   password: string;
+};
+
+export type Koc = {
+  id: string;
+  name: string;
+  /** Chỉ dùng khi tạo mới KOC (BE tạo tài khoản user role KOC). */
+  email?: string;
+  bankAccount: string;
+  typeBank: string;
+  revenue: number;
+  averageSellingPrice: number;
+  engagementRate: number;
+  livestreamTotalAmount: number;
+  videoTotalAmount: number;
+  viewer: number;
+  linkTiktok: string;
+  facebook: string;
+  zalo: string;
+  gmvPerCustomer: number;
+  gmvByProduct: number;
+  gmvPerSaleChanel: number;
+  followerFemale: number;
+  followerMale: number;
+  followerAge: number;
+  topLocation: string;
+  address: string;
+  ageOfChildren: string;
+  idTiktok: string;
+  kocType: string;
+  tier: string;
+  gmv: number;
+  followers: number;
+  status: string;
+  productCategory: string;
 };

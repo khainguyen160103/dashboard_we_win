@@ -35,6 +35,30 @@ export const queryKeys = {
     details: () => [...queryKeys.campaigns.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.campaigns.details(), id] as const,
   },
+  brands: {
+    all: ["brands"] as const,
+    lists: () => [...queryKeys.brands.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.brands.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.brands.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.brands.details(), id] as const,
+  },
+  kocs: {
+    all: ["kocs"] as const,
+    lists: () => [...queryKeys.kocs.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.kocs.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.kocs.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.kocs.details(), id] as const,
+  },
+  campaignKocs: {
+    all: ["campaignKocs"] as const,
+    forCampaign: (campaignId: string) => [...queryKeys.campaignKocs.all, campaignId] as const,
+    list: (campaignId: string) =>
+      [...queryKeys.campaignKocs.forCampaign(campaignId), "list"] as const,
+    available: (campaignId: string, params?: Record<string, unknown>) =>
+      [...queryKeys.campaignKocs.forCampaign(campaignId), "available", params ?? {}] as const,
+  },
   jobs: {
     all: ["jobs"] as const,
     lists: () => [...queryKeys.jobs.all, "list"] as const,

@@ -1,20 +1,18 @@
 import { useState, useMemo } from "react";
-import { Button, Card, Flex, Input, Statistic, Spin, message } from "antd";
-import { PlusOutlined, SearchOutlined, RocketOutlined, CheckCircleOutlined, ClockCircleOutlined } from "@ant-design/icons";
-import PageBreadcrumb from "../components/common/PageBreadCrumb";
-import PageMeta from "../components/common/PageMeta";
+import { Button, Flex, Input, Spin, message } from "antd";
+import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { CardCampaign } from "../components/campaign/CardCampaign";
+import { CampaignAlerts } from "../components/campaign/CampaignAlerts";
+import CampaignDetailPage from "./CampaignDetailPage";
 
-import {
-  CampaignTable,
-  CampaignFormModal,
-  CampaignDetailDrawer,
-  initialMockCampaigns,
-} from "../features/campaign";
+import { CampaignTable } from "../components/campaign/CampaignTable";
+import { CampaignFormModal } from "../components/campaign/CampaignFormModal";
+import { initialMockCampaigns } from "../components/campaign/campaign.data";
 
 import type {
   Campaign,
   CampaignFormValues,
-} from "../features/campaign";
+} from "../components/campaign/types";
 
 import {
   useCampaignsQuery,
@@ -37,8 +35,7 @@ export default function CampaignManagement() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
 
-  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [detailCampaign, setDetailCampaign] = useState<Campaign | null>(null);
 
   // Map API response to Campaign format
   const campaignsList: Campaign[] = useMemo(() => {
@@ -96,8 +93,7 @@ export default function CampaignManagement() {
   };
 
   const handleOpenDetail = (campaign: Campaign) => {
-    setSelectedCampaign(campaign);
-    setDetailDrawerOpen(true);
+    setDetailCampaign(campaign);
   };
 
   const handleSubmitForm = async (values: CampaignFormValues) => {
@@ -143,11 +139,6 @@ export default function CampaignManagement() {
     }
   };
 
-
-  const handleUpdateCampaignInDrawer = (updated: Campaign) => {
-    setSelectedCampaign(updated);
-  };
-
   // Filtered campaigns
   const filteredCampaigns = campaignsList.filter(
     (c) =>
@@ -158,35 +149,70 @@ export default function CampaignManagement() {
   );
 
   // Top summary metrics
+  const totalCampaigns = campaignsList.length;
   const activeCount = campaignsList.filter((c) => c.status === "Active").length;
   const totalKocsInvited = campaignsList.reduce((sum, c) => sum + c.kocs.length, 0);
 
+  // Demo GMV / budget figures (không có trong data model hiện tại)
+  const totalGmvLabel = "53Bđ";
+  const budgetUsed = 13;
+  const budgetTotal = 21;
+  const budgetPct = Math.round((budgetUsed / budgetTotal) * 100);
+
+  // Tỷ lệ lấp đầy KOC trung bình: KOC tham gia / mục tiêu (giả định 45 KOC/chiến dịch)
+  const kocTargetPerCampaign = 45;
+  const avgKocFillRate = totalCampaigns
+    ? Math.round(
+        (totalKocsInvited / (totalCampaigns * kocTargetPerCampaign)) * 100
+      )
+    : 0;
+
+  if (detailCampaign) {
+    return (
+      <CampaignDetailPage
+        campaign={detailCampaign}
+        onBack={() => setDetailCampaign(null)}
+      />
+    );
+  }
+
   return (
     <>
-      <PageMeta title="Quản lý chiến dịch" description="Trang quản lý chiến dịch tích hợp REST API" />
-      <PageBreadcrumb pageTitle="Quản lý chiến dịch" />
 
       <Spin spinning={isLoading || isFetching} tip="Đang tải dữ liệu chiến dịch từ REST API server...">
         {/* Overview Cards */}
-        <Flex gap={16} style={{ marginBottom: 24 }}>
-          <Card size="small" style={{ flex: 1 }}>
-            <Statistic title="Tổng Chiến Dịch" value={campaignsList.length} prefix={<RocketOutlined />} />
-          </Card>
-          <Card size="small" style={{ flex: 1 }}>
-            <Statistic
-              title="Đang Hoạt Động"
-              value={activeCount}
-              valueStyle={{ color: "#52c41a" }}
-              prefix={<CheckCircleOutlined />}
-            />
-          </Card>
-          <Card size="small" style={{ flex: 1 }}>
-            <Statistic title="Tổng KOC Tham Gia" value={totalKocsInvited} prefix={<ClockCircleOutlined />} />
-          </Card>
+        <Flex gap={16} wrap="wrap" style={{ marginBottom: 24 }}>
+          <CardCampaign
+            title="Tổng chiến dịch"
+            value={totalCampaigns}
+            description='Toàn bộ chiến dịch trong hệ thống demo — bấm "Xem thêm" cuối bảng để xem hết'
+          />
+          <CardCampaign
+            title="Đang hoạt động"
+            value={activeCount}
+            valueClassName="text-green-600"
+            description="khớp với Dashboard Tổng quan"
+          />
+          <CardCampaign
+            title="Tổng GMV / Ngân sách"
+            value={totalGmvLabel}
+            description={`Ngân sách đã dùng ${budgetUsed}Bđ / ${budgetTotal}Bđ (${budgetPct}%)`}
+          />
+          <CardCampaign
+            title="Tỷ lệ lấp đầy KOC TB"
+            value={`${avgKocFillRate}%`}
+            description={`KOC xác nhận / mục tiêu, TB ${totalCampaigns} chiến dịch`}
+          />
         </Flex>
 
+
+
+
+
+        <CampaignAlerts campaigns={campaignsList} onSelect={handleOpenDetail} />
+
         {/* Toolbar */}
-        <Flex justify="space-between" align="center" style={{ marginBottom: 20 }}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={12} style={{ marginBottom: 16 }}>
           <Input
             placeholder="Tìm kiếm chiến dịch theo tên, nhãn hàng, ngành hàng..."
             prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
@@ -195,14 +221,13 @@ export default function CampaignManagement() {
             onChange={(e) => setSearchText(e.target.value)}
             allowClear
           />
-
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={handleOpenCreate}
             loading={createCampaignMutation.isPending || updateCampaignMutation.isPending}
           >
-            + Tạo Chiến Dịch Mới
+            Tạo Chiến Dịch Mới
           </Button>
         </Flex>
 
@@ -221,14 +246,6 @@ export default function CampaignManagement() {
         editingCampaign={editingCampaign}
         onClose={() => setFormModalOpen(false)}
         onSubmit={handleSubmitForm}
-      />
-
-      {/* Detail & KOC Pipeline Drawer */}
-      <CampaignDetailDrawer
-        open={detailDrawerOpen}
-        campaign={selectedCampaign}
-        onClose={() => setDetailDrawerOpen(false)}
-        onUpdateCampaign={handleUpdateCampaignInDrawer}
       />
     </>
   );

@@ -5,19 +5,17 @@ import PageMeta from "../components/common/PageMeta";
 import { authStore } from "../store/authStore";
 import { getActiveUserRole } from "../utils/rbac";
 
-import {
-  JobPMView,
-  JobKOCView,
-  PMReviewModal,
-  UploadVideoModal,
-  KOCInfoModal,
-} from "../features/job";
+import { JobPMView } from "../components/job/JobPMView";
+import { JobKOCView } from "../components/job/JobKOCView";
+import { PMReviewModal } from "../components/job/PMReviewModal";
+import { UploadVideoModal } from "../components/job/UploadVideoModal";
+import { KOCInfoModal } from "../components/job/KOCInfoModal";
 
 import type {
   JobRecord,
   PMReviewFormValues,
   KOCUploadFormValues,
-} from "../features/job";
+} from "../components/job/types";
 
 import {
   useJobsQuery,

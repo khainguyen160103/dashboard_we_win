@@ -4,3 +4,5 @@ export * from "./usePermissionQuery";
 export * from "./useRoleQuery";
 export * from "../useUser";
 export * from "./useTemplateQuery";
+export * from "./useKocQuery";
+export * from "./useCampaignKocQuery";

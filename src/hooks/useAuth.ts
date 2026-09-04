@@ -14,15 +14,29 @@ export const useAuth = () => {
 
   const useLogin = useMutation({
     mutationFn: async (params: loginRequest) => await authService.login(params),
-    onSuccess: (data) => {
-      if (data?.data) {
-        setAuth({
-          user: data.data.user,
-          accessToken: data.data.accessToken,
-          refreshToken: data.data.refreshToken,
-        });
-        navigate("/");
-        message.success(`${data.message}`);
+    onSuccess: async (data) => {
+      const { accessToken, refreshToken } = data?.data ?? {};
+      if (!accessToken) {
+        message.error(data?.message ?? "Đăng nhập thất bại");
+        return;
+      }
+
+      localStorageUtils.setItem(keyStore.ACCESS_TOKEN, accessToken);
+      localStorageUtils.setItem(keyStore.REFRESH_TOKEN, refreshToken);
+
+      try {
+        const me = await authService.getMe();
+        setAuth({ user: me.data });
+        message.success(data?.message ?? "Đăng nhập thành công");
+        navigate("/dashboard");
+      } catch (error: any) {
+        localStorageUtils.removeItem(keyStore.ACCESS_TOKEN);
+        localStorageUtils.removeItem(keyStore.REFRESH_TOKEN);
+        clearAuth();
+        message.error(
+          error?.response?.data?.message ??
+            "Không lấy được thông tin người dùng",
+        );
       }
     },
     onError: (error) => {
@@ -32,7 +46,7 @@ export const useAuth = () => {
   });
   const useLogout = useMutation({
     mutationFn: async () => {
-      const refreshToken = authStore.getState().refreshToken;
+      const refreshToken = localStorageUtils.getItem(keyStore.REFRESH_TOKEN);
       if (!refreshToken) {
         message.error("Refresh token is missing");
         return false;
@@ -43,7 +57,8 @@ export const useAuth = () => {
       message.success("Đăng xuất thành công!");
       navigate("/signin");
       clearAuth();
-      localStorageUtils.removeItem(keyStore.Auth);
+      localStorageUtils.removeItem(keyStore.ACCESS_TOKEN);
+      localStorageUtils.removeItem(keyStore.REFRESH_TOKEN);
     },
 
     onError: (error) => {

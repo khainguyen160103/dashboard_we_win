@@ -219,10 +219,13 @@ export default function UserManagement() {
         } else if (u.admin || u.isAdmin) {
           roleId = "a1000000-0000-0000-0000-000000000001";
         } else if (Array.isArray(u.roles) && u.roles.length > 0) {
-          const firstRole = u.roles[0];
-          const firstRoleStr = typeof firstRole === "object" && firstRole !== null
-            ? (firstRole.id ?? firstRole.code ?? "")
-            : String(firstRole);
+          const firstRole = u.roles[0] as unknown as
+            | string
+            | { id?: string; code?: string };
+          const firstRoleStr =
+            typeof firstRole === "object" && firstRole !== null
+              ? (firstRole.id ?? firstRole.code ?? "")
+              : String(firstRole);
           const matched = rolesList.find(
             (r) => r.id === firstRoleStr || r.code === firstRoleStr || r.name === firstRoleStr
           );

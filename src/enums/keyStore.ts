@@ -1,3 +1,4 @@
-export enum keyStore{ 
-    Auth = "auth-storage",
+export enum keyStore {
+  ACCESS_TOKEN = "access-token",
+  REFRESH_TOKEN = "refresh-token",
 }

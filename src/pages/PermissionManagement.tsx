@@ -33,18 +33,16 @@ import {
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 
-import {
-  RolePermissionMatrix,
-  AddRoleModal,
-  AddPermissionModal,
-} from "../features/permission";
+import { RolePermissionMatrix } from "../components/permission/RolePermissionMatrix";
+import { AddRoleModal } from "../components/permission/AddRoleModal";
+import { AddPermissionModal } from "../components/permission/AddPermissionModal";
 
 import type {
   RoleRow,
   PermissionCol,
   UserRow,
   RolePermissionMap,
-} from "../features/permission";
+} from "../components/permission/types";
 
 import {
   useRolesQuery,
@@ -158,7 +156,7 @@ export default function PermissionManagement() {
   // Roles of the selected user from the detail API (has permissions inside)
   const selectedUserRoles: Role[] = useMemo(() => {
     if (!userDetail) return [];
-    if (Array.isArray(userDetail.roles)) return userDetail.roles as Role[];
+    if (Array.isArray(userDetail.roles)) return userDetail.roles as unknown as Role[];
     return [];
   }, [userDetail]);
 

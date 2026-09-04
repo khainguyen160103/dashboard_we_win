@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
 import {
@@ -11,14 +11,14 @@ import {
   LockIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import { authStore } from "../store/authStore";
-import { getActiveUserRole, RoleType } from "../utils/rbac";
+import { usePermission } from "../context/PermissionContext";
 
 type NavItem = {
   name: string;
   icon: React.ReactNode;
-  path?: string;
-  roles?: RoleType[];
+  path: string;
+  /** Luôn hiển thị trong menu, không phụ thuộc RBAC (các trang vận hành cốt lõi). */
+  core?: boolean;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
@@ -26,65 +26,66 @@ const allNavItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    path: "/",
-    roles: ["ADMIN", "SALES", "PM", "KOC"],
+    path: "/dashboard",
+    core: true,
   },
   {
     icon: <UserCircleIcon />,
     name: "Quản lý KOC",
     path: "/koc",
-    roles: ["ADMIN", "SALES", "PM"],
+    core: true,
   },
   {
     icon: <GridIcon />,
     name: "Kalodata Ranking",
     path: "/kalodata",
-    roles: ["ADMIN", "SALES", "PM"],
+    core: true,
   },
   {
     icon: <UserCircleIcon />,
     name: "Quản lý Brand",
     path: "/brand",
-    roles: ["ADMIN", "SALES", "PM"],
+    core: true,
   },
   {
     icon: <BoxCubeIcon />,
     name: "Vận hành chiến dịch",
-    path: "/campaign",
-    roles: ["ADMIN", "SALES", "PM"],
+    path: "/campaigns",
+    core: true,
   },
   {
     icon: <VideoIcon />,
     name: "Job & Duyệt Video",
     path: "/job-review",
-    roles: ["ADMIN", "PM", "KOC"],
+    core: true,
   },
   {
     icon: <UserCircleIcon />,
     name: "Quản lý User",
-    path: "/user",
-    roles: ["ADMIN"],
+    path: "/users",
   },
   {
     icon: <LockIcon />,
     name: "Phân quyền người dùng",
-    path: "/permission",
-    roles: ["ADMIN"],
+    path: "/permissions",
+
   },
 ];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const user = authStore((state) => state.user);
+  const { permissions } = usePermission();
+  const allowedPaths = permissions ? Object.keys(permissions) : [];
+
   const location = useLocation();
 
-  // Tự động kiểm tra role của người dùng đang đăng nhập
-  const activeRole = useMemo(() => getActiveUserRole(user), [user]);
+  // Trang vận hành cốt lõi (core) luôn hiển thị; các trang còn lại theo RBAC.
+  // Khi chưa tải được permission map thì hiển thị toàn bộ menu.
+  const navItems = allNavItems.filter(
+    (item: NavItem) =>
+      item.core || !permissions || allowedPaths.includes(item.path),
+  );
 
-  // Lọc danh sách menu Sidebar tự động theo Role người dùng đã đăng nhập
-  const navItems = useMemo(() => {
-    return allNavItems.filter((item) => !item.roles || item.roles.includes(activeRole));
-  }, [activeRole]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
-import Label from "../form/Label";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { Button, Form, Input, message } from 'antd';
 import { loginRequest } from "../../model/User";
@@ -14,13 +13,14 @@ export default function SignInForm() {
     },
   });
 
-  const { useLogin } = useAuth();
+  const { useLogin, } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit: SubmitHandler<loginRequest> = async (data) => {
     try {
       useLogin.mutate(data);
+
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -46,9 +46,9 @@ export default function SignInForm() {
             <Form onFinish={handleSubmit(onSubmit)} layout="vertical">
               <div className="space-y-6">
                 <div>
-                  <Label>
+                  <label>
                     Email <span className="text-error-500">*</span>{" "}
-                  </Label>
+                  </label>
                   <Controller
                     control={control}
                     name="email"
@@ -69,9 +69,9 @@ export default function SignInForm() {
                 </div>
 
                 <div>
-                  <Label>
+                  <label>
                     Password <span className="text-error-500">*</span>{" "}
-                  </Label>
+                  </label>
                   <div className="relative">
                     <Controller
                       control={control}
