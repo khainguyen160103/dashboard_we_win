@@ -5,14 +5,13 @@ import UserProfiles from "./pages/UserProfiles";
 import UserManagement from "./pages/UserManagement";
 import CampaignManagement from "./pages/CampaignManagement";
 import JobReview from "./pages/JobReview";
-import KPIDashboard from "./pages/KPIDashboard";
+import RoleDashboard from "./pages/Dashboard/RoleDashboard";
 import KOCManagement from "./pages/KOCManagement";
 import BrandManagement from "./pages/BrandManagement";
-import PermissionManagement from "./pages/PermissionManagement";
 import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import KalodataCreator from "./pages/KalodataCreator";
+import { CampaignDetail } from "./pages/CampaignDetail";
 
 export default function App() {
   return (
@@ -30,7 +29,7 @@ export default function App() {
           >
             <Route index path="/" element={<Navigate to="/dashboard" replace />} />
 
-            <Route index path="/dashboard" element={<KPIDashboard />} />
+            <Route index path="/dashboard" element={<RoleDashboard />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
@@ -39,9 +38,8 @@ export default function App() {
             <Route path="/koc" element={<KOCManagement />} />
             <Route path="/brand" element={<BrandManagement />} />
             <Route path="/campaigns" element={<CampaignManagement />} />
+            <Route path="/campaigns/:id" element={<CampaignDetail />} />
             <Route path="/job-review" element={<JobReview />} />
-            <Route path="/permissions" element={<PermissionManagement />} />
-            <Route path="/kalodata" element={<KalodataCreator />} />
           </Route>
 
           {/* Auth Layout */}

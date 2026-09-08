@@ -11,7 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useModal } from '../../hooks/useModal';
 import { KOCFormModal } from '../koc/KOCFormModal';
 import { useKocs } from '../../hooks/query/useKocQuery';
-import { useCampaignsQuery } from '../../hooks/query/useCampaignQuery';
+import { useCampaigns } from '../../hooks/query/useCampaignQuery';
 import { queryKeys } from '../../hooks/query/queryKeys';
 import { mapKocToRequest } from '../../model/Koc';
 import campaignKocService from '../../services/campaignKoc.service';
@@ -26,10 +26,8 @@ const TIER_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-    { value: 'Đang hợp tác', label: 'Đang hợp tác' },
-    { value: 'Tiềm năng', label: 'Tiềm năng' },
-    { value: 'Tạm dừng', label: 'Tạm dừng' },
-    { value: 'Ngừng hợp tác', label: 'Ngừng hợp tác' },
+    { value: 'ACTIVE', label: 'Đang hoạt động' },
+    { value: 'PENDING', label: 'Cần rà soát' }
 ];
 
 // Lọc theo 1 trường + giá trị nhập tay
@@ -351,17 +349,24 @@ export default function KocTable() {
         }
     };
 
-    // ── Dữ liệu KOC thật từ API (GET /kocs) ──────────────────────────────────
+
     const { kocs: dataSource, isLoading, isError, createKoc, updateKoc, isCreating, isUpdating } = useKocs();
 
-    // ── Danh sách chiến dịch thật từ API (GET /campaigns) ────────────────────
-    const { data: campaigns = [], isLoading: isCampaignsLoading } = useCampaignsQuery();
-    const campaignOptions = (campaigns as any[]).map((c) => ({
+
+    const { data: campaigns, isLoading: isCampaignsLoading } = useCampaigns();
+    // `useCampaigns` trả về nguyên response (`{ data: { content: [...] } }`), không phải mảng
+    const campaignList: any[] = Array.isArray(campaigns)
+        ? campaigns
+        : (campaigns as any)?.data?.content ??
+        (campaigns as any)?.content ??
+        (campaigns as any)?.data ??
+        [];
+    const campaignOptions = campaignList.map((c: any) => ({
         value: String(c.id ?? c.campaignId ?? c.code),
         label: c.name ?? c.title ?? String(c.id),
     }));
 
-    // ── Bộ lọc (frontend) theo Tier / Trạng thái ─────────────────────────────
+
     const [tierFilter, setTierFilter] = useState<string | undefined>(undefined);
     const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
@@ -455,26 +460,41 @@ export default function KocTable() {
                 onChange={(v) => setStatusFilter(v)}
                 options={STATUS_OPTIONS}
             />
+            <Select
+                allowClear
+                placeholder="Lọc theo ngành hàng"
+                style={{ width: 200 }}
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v)}
+                options={STATUS_OPTIONS}
+            />
 
-            <Space.Compact>
-                <Select<FieldFilterKey>
-                    value={filterField}
-                    onChange={(v) => setFilterField(v)}
-                    options={FIELD_FILTER_OPTIONS}
-                    style={{ width: 180 }}
-                />
-                <Input
-                    allowClear
-                    style={{ width: 240 }}
-                    placeholder={
-                        NUMERIC_FIELDS.includes(filterField)
-                            ? 'Nhập giá trị tối thiểu'
-                            : 'Nhập từ khóa'
-                    }
-                    value={filterValue}
-                    onChange={(e) => setFilterValue(e.target.value)}
-                />
-            </Space.Compact>
+            <Select
+                allowClear
+                placeholder="GMV"
+                style={{ width: 200 }}
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v)}
+                options={STATUS_OPTIONS}
+            /> 
+
+            <Select
+                allowClear
+                placeholder="Follower"
+                style={{ width: 200 }}
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v)}
+                options={STATUS_OPTIONS}
+            /> 
+
+            <Select
+                allowClear
+                placeholder="Doanh thu"
+                style={{ width: 200 }}
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v)}
+                options={STATUS_OPTIONS}
+            /> 
 
             {hasActiveFilter && (
                 <Button type="link" onClick={clearFilters}>

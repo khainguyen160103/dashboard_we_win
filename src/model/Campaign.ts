@@ -41,3 +41,10 @@ export type CampaignRequest = {
   targetTotalKoc?: number;
   tierKocRequire?: string;
 };
+
+
+export type CampaignResponse = {
+  data: any[];
+  total: number;
+  page: number;
+};

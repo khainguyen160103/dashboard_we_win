@@ -11,13 +11,15 @@ export interface CampaignPayload {
 }
 
 export const campaignService = {
-  list: async (params?: { page?: number; limit?: number; q?: string; status?: string }): Promise<any[]> => {
-    const { data } = await axiosClient.get<any>('/campaigns', { params });
-    if (Array.isArray(data)) return data;
-    if (data?.data?.content && Array.isArray(data.data.content)) return data.data.content;
-    if (data?.content && Array.isArray(data.content)) return data.content;
-    if (data?.data && Array.isArray(data.data)) return data.data;
-    return [];
+  list: async (params?: {
+    page?: number;
+    limit?: number;
+    name?: string;
+    status?: string;
+  }): Promise<any> => {
+    const response = await axiosClient.get<any>("/campaigns", { params });
+    console.log("CampaignService list response:", response.data);
+    return response.data;
   },
 
   get: async (id: string): Promise<any> => {
@@ -26,11 +28,14 @@ export const campaignService = {
   },
 
   create: async (payload: CampaignPayload): Promise<any> => {
-    const { data } = await axiosClient.post<any>('/campaigns', payload);
+    const { data } = await axiosClient.post<any>("/campaigns", payload);
     return data?.data ?? data;
   },
 
-  update: async (id: string, payload: Partial<CampaignPayload>): Promise<any> => {
+  update: async (
+    id: string,
+    payload: Partial<CampaignPayload>,
+  ): Promise<any> => {
     const { data } = await axiosClient.put<any>(`/campaigns/${id}`, payload);
     return data?.data ?? data;
   },
@@ -39,8 +44,14 @@ export const campaignService = {
     await axiosClient.delete(`/campaigns/${id}`);
   },
 
-  inviteKoc: async (campaignId: string, payload: { kocId: string; note?: string }): Promise<any> => {
-    const { data } = await axiosClient.post<any>(`/campaigns/${campaignId}/invite`, payload);
+  inviteKoc: async (
+    campaignId: string,
+    payload: { kocId: string; note?: string },
+  ): Promise<any> => {
+    const { data } = await axiosClient.post<any>(
+      `/campaigns/${campaignId}/invite`,
+      payload,
+    );
     return data?.data ?? data;
   },
 };

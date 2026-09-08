@@ -18,16 +18,12 @@ import {
   WarningOutlined,
   ClockCircleOutlined,
   QuestionCircleOutlined,
-  CalendarOutlined,
-  ReloadOutlined,
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
-import PageMeta from "../components/common/PageMeta";
-import PageBreadcrumb from "../components/common/PageBreadCrumb";
 
 import { BrandFormModal } from "../components/brand/BrandFormModal";
 import { BrandDetailDrawer } from "../components/brand/BrandDetailDrawer";
@@ -180,14 +176,24 @@ function AlertPanel({ tone, icon, title, hint, count, children }: AlertPanelProp
   );
 }
 
+/** Màu tag Tier: nền nhạt + chữ đậm màu cùng tông (tương phản tốt, dễ đọc). */
+const TIER_TAG_STYLE: Record<Brand["tier"], { bg: string; fg: string; border: string }> = {
+  Gold: { bg: "#fff7e6", fg: "#ad6800", border: "#ffd591" },
+  Silver: { bg: "#f5f5f5", fg: "#595959", border: "#d9d9d9" },
+  Bronze: { bg: "#fff2e8", fg: "#ad4e00", border: "#ffbb96" },
+  New: { bg: "#f6ffed", fg: "#389e0d", border: "#b7eb8f" },
+};
+
 function TierTag({ tier }: { tier: Brand["tier"] }) {
+  const s = TIER_TAG_STYLE[tier] ?? TIER_TAG_STYLE.New;
   return (
     <Tag
       style={{
-        color: "#fff",
-        backgroundColor: TIER_COLORS[tier],
-        borderColor: TIER_COLORS[tier],
+        color: s.fg,
+        backgroundColor: s.bg,
+        borderColor: s.border,
         fontWeight: 600,
+        margin: 0,
       }}
     >
       {tier}
@@ -202,6 +208,41 @@ const daysUntil = (iso?: string): number | null => {
 
 const fmtDateVN = (iso: string) => new Date(iso).toLocaleDateString("vi-VN");
 
+const STATUS_DOT: Record<Brand["status"], { label: string; color: string; text: string }> = {
+  Active: { label: "Đang hoạt động", color: "#0ca30c", text: "text-emerald-600" },
+  Pending: { label: "Chờ xác nhận", color: "#fab219", text: "text-amber-600" },
+  Inactive: { label: "Ngừng hoạt động", color: "#d03b3b", text: "text-red-500" },
+};
+
+function StatusDot({ status }: { status: Brand["status"] }) {
+  const m = STATUS_DOT[status] ?? STATUS_DOT.Pending;
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[13px] font-medium ${m.text}`}>
+      <span
+        className="inline-block h-[7px] w-[7px] shrink-0 rounded-full"
+        style={{ backgroundColor: m.color }}
+      />
+      {m.label}
+    </span>
+  );
+}
+
+/** Brand ở diện churn risk — suy ra như demo (không chỉ dựa cờ churnRisk từ API). */
+function churnReasonsOf(b: Brand): string[] {
+  const reasons: string[] = [];
+  if (b.activeCampaigns === 0 && b.totalSpent > 0)
+    reasons.push(`0 chiến dịch đang chạy dù doanh thu ${formatVndD(b.totalSpent)}`);
+  if (b.roi != null && b.roi > 0 && b.roi < 3.0) reasons.push(`ROI ${b.roi.toFixed(1)}x thấp`);
+  if (!reasons.length) {
+    if (b.status === "Inactive") reasons.push("Ngừng hoạt động");
+    else if (b.status === "Pending") reasons.push("Chờ xác nhận");
+    else if (b.churnReason) reasons.push(b.churnReason);
+  }
+  return reasons;
+}
+const isChurnRisk = (b: Brand) =>
+  Boolean(b.churnRisk) || b.status !== "Active" || churnReasonsOf(b).length > 0;
+
 /* ── page ────────────────────────────────────────────────────────────────── */
 
 export default function BrandManagement() {
@@ -214,8 +255,7 @@ export default function BrandManagement() {
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
 
   // ── Data từ REST API (GET /brands) ─────────────────────────────────────
-  const { data: brands = [], isLoading, isFetching, isError, error, refetch } =
-    useBrandsQuery();
+  const { data: brands = [], isLoading, isError, error, refetch } = useBrandsQuery();
   const createMut = useCreateBrandMutation();
   const updateMut = useUpdateBrandMutation();
   const deleteMut = useDeleteBrandMutation();
@@ -253,12 +293,12 @@ export default function BrandManagement() {
   }, [brands]);
 
   // Cảnh báo & cơ hội
-  const churnRisk = useMemo(() => brands.filter((b) => b.churnRisk), [brands]);
+  const churnRisk = useMemo(() => brands.filter(isChurnRisk), [brands]);
   const expiringSoon = useMemo(
     () =>
       brands
         .map((b) => ({ b, days: daysUntil(b.contractEndDate) }))
-        .filter((x): x is { b: Brand; days: number } => x.days != null && x.days > 0 && x.days <= 60)
+        .filter((x): x is { b: Brand; days: number } => x.days != null && x.days >= 30 && x.days <= 60)
         .sort((a, b) => a.days - b.days),
     [brands],
   );
@@ -296,9 +336,9 @@ export default function BrandManagement() {
           >
             {r.name}
           </button>
-          {r.churnRisk && (
+          {isChurnRisk(r) && (
             <Tag color="error" style={{ margin: 0, fontSize: 11 }}>
-              🚩 Cần chú ý
+              ⚑ Cần chú ý
             </Tag>
           )}
         </div>
@@ -348,7 +388,7 @@ export default function BrandManagement() {
       render: (v: number) => formatVndD(v),
     },
     {
-      title: "GMV brand",
+      title: "GMV Brand",
       dataIndex: "gmv",
       key: "gmv",
       width: 130,
@@ -357,12 +397,38 @@ export default function BrandManagement() {
       render: (v?: number) => (v ? <strong className="text-emerald-600">{formatVndD(v)}</strong> : "—"),
     },
     {
-      title: "",
-      key: "action",
+      title: "ROI",
+      dataIndex: "roi",
+      key: "roi",
       width: 90,
+      align: "right",
+      sorter: (a, b) => (a.roi ?? 0) - (b.roi ?? 0),
+      render: (v?: number) => (v ? `${v.toFixed(1)}x` : "—"),
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 150,
+      render: (s: Brand["status"]) => <StatusDot status={s} />,
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      width: 160,
       fixed: "right",
       render: (_, r) => (
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="cursor-pointer whitespace-nowrap text-xs font-semibold text-[#1890ff] hover:underline"
+            onClick={() => {
+              setSelectedBrand(r);
+              setDetailDrawerOpen(true);
+            }}
+          >
+            Xem hồ sơ →
+          </button>
           <Button
             size="small"
             type="text"
@@ -416,35 +482,9 @@ export default function BrandManagement() {
 
   return (
     <>
-      <PageMeta
-        title="Quản lý Brand — Sức khỏe & hiệu quả nhãn hàng"
-        description="Dashboard sức khỏe và hiệu quả từng nhãn hàng: KPI, phân bổ tier/ngành hàng, cảnh báo churn & hợp đồng."
-      />
-      <PageBreadcrumb pageTitle="Quản lý Brand" />
 
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Quản lý Brand</h1>
-          <div className="mt-1 text-sm text-gray-400">
-            Sức khỏe &amp; hiệu quả từng nhãn hàng
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="small"
-            icon={<ReloadOutlined />}
-            loading={isFetching}
-            onClick={() => refetch()}
-          >
-            Làm mới
-          </Button>
-          <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-500">
-            <CalendarOutlined />
-            01/08/2026 – 24/08/2026 · so với tháng 7
-          </div>
-        </div>
-      </div>
+
 
       {isError && (
         <Alert
@@ -463,6 +503,7 @@ export default function BrandManagement() {
 
       <Spin spinning={isLoading || mutating} tip="Đang tải dữ liệu brand...">
 
+      <div className="flex flex-col gap-6 pt-2">
       <div className="flex flex-wrap gap-4">
         <StatCard title="Tổng Nhãn Hàng" value={kpis.total} />
         <StatCard
@@ -527,7 +568,7 @@ export default function BrandManagement() {
                 </div>
               </div>
               <div className="max-w-[55%] whitespace-normal text-right text-xs font-medium text-red-500">
-                {b.churnReason}
+                {churnReasonsOf(b).join(" · ") || b.churnReason}
               </div>
             </button>
           ))}
@@ -567,6 +608,7 @@ export default function BrandManagement() {
           ))}
         </AlertPanel>
       </div>
+
 
       <Card
         size="small"
@@ -628,6 +670,7 @@ export default function BrandManagement() {
           )}
         </div>
       </Card>
+      </div>
       </Spin>
 
       {/* ── Modals ─────────────────────────────────────────────────────────── */}

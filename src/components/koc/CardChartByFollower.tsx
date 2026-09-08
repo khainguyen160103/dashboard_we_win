@@ -1,17 +1,23 @@
 import { Card, Space, Typography } from "antd";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { useKoc } from "../../hooks/query";
 
 
 const { Title } = Typography;
 ChartJS.register(ArcElement, Tooltip, Legend);
 export default function CardChartByFollower() {
+    const { data: kocs } = useKoc()
+    const nanoKocs = kocs?.filter(koc => koc.followers < 50000).length || 0;
+    const microKocs = kocs?.filter(koc => koc.followers >= 50000 && koc.followers < 300000).length || 0;
+    const macroKocs = kocs?.filter(koc => koc.followers >= 300000 && koc.followers < 1000000).length || 0;
+    const megaKocs = kocs?.filter(koc => koc.followers >= 1000000).length || 0;
     const data = {
-        labels: ['nano', 'micro', 'macro', 'mega'],
+        labels: ['Nano', 'Micro', 'Macro', 'Mega'],
         datasets: [
             {
                 label: 'Số lượng KOC',
-                data: [12, 19, 3, 5],
+                data: [nanoKocs, microKocs, macroKocs, megaKocs],
                 backgroundColor: [
                     '#2a78d6',
                     '#eb6834',

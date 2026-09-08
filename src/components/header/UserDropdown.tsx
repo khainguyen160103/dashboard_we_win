@@ -10,6 +10,7 @@ export default function UserDropdown() {
 
   const { useLogout } = useAuth();
   const user = authStore((state) => state.user);
+  console.log(user);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);

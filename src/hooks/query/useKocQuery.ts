@@ -3,19 +3,19 @@ import kocService from "../../services/koc.service";
 import type { KocListParams, KocRequest } from "../../model/Koc";
 import { queryKeys } from "./queryKeys";
 
-/**
- * Danh sách KOC từ REST API (`GET /kocs`), cache 5 phút.
- * `params` khớp thanh filter trên UI (keyword / tier / status / metric + minValue / sort / phân trang).
- */
-export const useKocsQuery = (params?: KocListParams, options?: { enabled?: boolean }) =>
+
+export const useKoc = (
+  params?: KocListParams,
+  options?: { enabled?: boolean },
+) =>
   useQuery({
-    queryKey: queryKeys.kocs.list(params),
+    queryKey: ["koc" + JSON.stringify(params)],
     queryFn: () => kocService.list(params),
     staleTime: 1000 * 60 * 5,
     enabled: options?.enabled,
   });
 
-/** Như `useKocsQuery` nhưng trả kèm metadata phân trang (`PageResponse`). */
+/** Như `useKoc` nhưng trả kèm metadata phân trang (`PageResponse`). */
 export const useKocPageQuery = (params?: KocListParams, options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: [...queryKeys.kocs.list(params), "page"] as const,
@@ -73,7 +73,7 @@ export const useDeleteKocMutation = () => {
  * Hook gộp tiện dùng trong component (giống `useUsers`).
  */
 export const useKocs = (params?: KocListParams) => {
-  const query = useKocsQuery(params);
+  const query = useKoc(params);
   const createMutation = useCreateKocMutation();
   const updateMutation = useUpdateKocMutation();
   const deleteMutation = useDeleteKocMutation();

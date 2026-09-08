@@ -7,11 +7,13 @@ import {
   GridIcon,
   HorizontaLDots,
   UserCircleIcon,
-  VideoIcon,
-  LockIcon,
+  LockIcon
+
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import { usePermission } from "../context/PermissionContext";
+import { authStore } from "../store/authStore";
+import { getActiveUserRole } from "../utils/rbac";
 
 type NavItem = {
   name: string;
@@ -22,69 +24,65 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const allNavItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/dashboard",
-    core: true,
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "Quản lý KOC",
-    path: "/koc",
-    core: true,
-  },
-  {
-    icon: <GridIcon />,
-    name: "Kalodata Ranking",
-    path: "/kalodata",
-    core: true,
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "Quản lý Brand",
-    path: "/brand",
-    core: true,
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Vận hành chiến dịch",
-    path: "/campaigns",
-    core: true,
-  },
-  {
-    icon: <VideoIcon />,
-    name: "Job & Duyệt Video",
-    path: "/job-review",
-    core: true,
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "Quản lý User",
-    path: "/users",
-  },
-  {
-    icon: <LockIcon />,
-    name: "Phân quyền người dùng",
-    path: "/permissions",
-
-  },
-];
 
 const AppSidebar: React.FC = () => {
+  const allNavItems: NavItem[] = [
+    {
+      icon: <GridIcon />,
+      name: "Dashboard",
+      path: "/dashboard",
+      core: true,
+    },
+    {
+      icon: <UserCircleIcon />,
+      name: "Quản lý KOC",
+      path: "/koc",
+      core: true,
+    },
+    {
+      icon: <UserCircleIcon />,
+      name: "Quản lý Brand",
+      path: "/brand",
+      core: true,
+    },
+    {
+      icon: <BoxCubeIcon />,
+      name: "Vận hành chiến dịch",
+      path: "/campaigns",
+      core: true,
+    },
+    // {
+    //   icon: <VideoIcon />,
+    //   name: "Job & Duyệt Video",
+    //   path: "/job-review",
+    //   core: true, 
+    // },
+    {
+      icon: <UserCircleIcon />,
+      name: "Quản lý User",
+      path: "/users",
+    },
+
+  ];
+
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const { permissions } = usePermission();
+
   const allowedPaths = permissions ? Object.keys(permissions) : [];
 
   const location = useLocation();
 
-  // Trang vận hành cốt lõi (core) luôn hiển thị; các trang còn lại theo RBAC.
-  // Khi chưa tải được permission map thì hiển thị toàn bộ menu.
-  const navItems = allNavItems.filter(
-    (item: NavItem) =>
-      item.core || !permissions || allowedPaths.includes(item.path),
-  );
+  // Role KOC / BRAND chỉ thấy mục Dashboard
+  const user = authStore((s) => s.user);
+
+  const dashboardOnly = user?.roles?.includes("KOC") || user?.roles?.includes("BRAND");
+
+  const navItems = dashboardOnly
+    ? allNavItems.filter((item) => item.path === "/dashboard")
+    : allNavItems.filter(
+      (item: NavItem) =>
+        item.core || !permissions || allowedPaths.includes(item.path),
+    );
 
 
   const [openSubmenu, setOpenSubmenu] = useState<{

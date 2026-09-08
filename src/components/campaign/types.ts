@@ -5,15 +5,15 @@ export type CampaignStatus = "Draft" | "Active" | "Completed" | "Cancelled";
 
 // ─── KOC Pipeline Status within a Campaign ────────────────────────────────────
 export type KOCPipelineStatus =
-  | "invited"        // 1. Đã gửi lời mời
-  | "registered"     // 2. KOC đã đăng ký
-  | "wewin_review"   // 3. WeWin đang sơ duyệt
-  | "brand_review"   // 4. Đã gửi nhãn hàng duyệt
-  | "approved"       // 5. Đã duyệt (chờ deal giá hoặc xác nhận)
-  | "dealing"        // 6. Đang deal giá
-  | "confirmed"      // 7. Xác nhận tham gia
-  | "rejected"       // Bị từ chối ở bất kỳ bước nào
-  | "thanked";       // Đã gửi thư cảm ơn
+  | "invited" // 1. Đã gửi lời mời
+  | "registered" // 2. KOC đã đăng ký
+  | "wewin_review" // 3. WeWin đang sơ duyệt
+  | "brand_review" // 4. Đã gửi nhãn hàng duyệt
+  | "approved" // 5. Đã duyệt (chờ deal giá hoặc xác nhận)
+  | "dealing" // 6. Đang deal giá
+  | "confirmed" // 7. Xác nhận tham gia
+  | "rejected" // Bị từ chối ở bất kỳ bước nào
+  | "thanked"; // Đã gửi thư cảm ơn
 
 // ─── KOC entry inside a Campaign ──────────────────────────────────────────────
 export type CampaignKOC = {
@@ -39,19 +39,27 @@ export type CampaignKOC = {
 
 // ─── Campaign ─────────────────────────────────────────────────────────────────
 export type Campaign = {
-  id: number;
+  id: string;
   name: string;
-  description?: string;
-  status: CampaignStatus;
-  startDate: string;
-  endDate: string;
-  category?: string;
-  brandName?: string;
-  kocs: CampaignKOC[];
+  type: string;
+  productCategoryId: string;
+  productCategoryName: string;
+  brandName: string;
+  brandId: string;
+  status: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  targetTotalKoc: number;
+  tierKocRequire: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
 };
 
 // ─── Campaign type / Cast mode / Tier ────────────────────────────────────────
-export type CampaignType = "tap_optimize" | "brand_awareness" | "gmv_push" | "product_launch";
+export type CampaignType =
+  "" | "brand_awareness" | "gmv_push" | "product_launch";
 export type CastMode = "no_cast" | "paid_cast" | "free_cast";
 export type RequiredTier = "any" | "Nano" | "Micro" | "Macro" | "Mega";
 

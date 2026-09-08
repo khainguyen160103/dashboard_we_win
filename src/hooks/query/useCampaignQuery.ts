@@ -3,16 +3,21 @@ import { campaignService } from "../../services/campaign.service";
 import type { CampaignPayload } from "../../services/campaign.service";
 import { queryKeys } from "./queryKeys";
 
-type CampaignListParams = { page?: number; limit?: number; q?: string; status?: string };
+type CampaignListParams = {
+  page?: number;
+  limit?: number;
+  name?: string;
+  status?: string;
+};
 
-export const useCampaignsQuery = (params?: CampaignListParams) =>
+export const useCampaigns = (params?: CampaignListParams) =>
   useQuery({
-    queryKey: queryKeys.campaigns.list(params),
+    queryKey: ["campaigns", params],
     queryFn: () => campaignService.list(params),
     staleTime: 1000 * 60 * 5, // 5 mins
   });
 
-export const useCampaignQuery = (id: string, enabled = true) =>
+export const useCampaign = (id: string, enabled = true) =>
   useQuery({
     queryKey: queryKeys.campaigns.detail(id),
     queryFn: () => campaignService.get(id),

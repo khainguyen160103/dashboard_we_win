@@ -26,6 +26,8 @@ export const useAuth = () => {
 
       try {
         const me = await authService.getMe();
+        console.log("me data" , me);
+        
         setAuth({ user: me.data });
         message.success(data?.message ?? "Đăng nhập thành công");
         navigate("/dashboard");
@@ -41,7 +43,7 @@ export const useAuth = () => {
     },
     onError: (error) => {
       console.log("error: ", error);
-      message.error(`${error.message}`);
+      message.error(`test${error.message}`);
     },
   });
   const useLogout = useMutation({

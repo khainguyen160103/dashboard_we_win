@@ -1,22 +1,23 @@
 import { api as axiosClient } from "../api/request";
-import { URL } from '../api/url'
-import { Response } from "../model/Response";
+import { URL } from "../api/url";
+import type { Response } from "../model/Response";
 import type { User, loginRequest, loginResponse } from "../model/User";
+
+/**
+ * Điểm truy cập DUY NHẤT cho API xác thực (login / logout / refresh / me).
+ * Không tạo lớp gọi auth song song ở nơi khác — dùng `authService` ở đây.
+ */
 export const authService = {
   login: async (params: loginRequest): Promise<Response<loginResponse>> => {
     const { data } = await axiosClient.post<Response<loginResponse>>(
       URL.AUTH.LOGIN,
-      {
-        email: params.email,
-        password: params.password,
-      },
+      { email: params.email, password: params.password },
       { withCredentials: true },
     );
-    console.log("data: ", data);
     return data;
   },
 
-  logout: async (refreshToken: string): Promise<void> => {
+  logout: async (refreshToken?: string): Promise<void> => {
     await axiosClient.post(
       URL.AUTH.LOGOUT,
       { refreshToken },
@@ -24,8 +25,9 @@ export const authService = {
     );
   },
 
-  refresh: async (): Promise<Response<User>> => {
-    const { data } = await axiosClient.post<Response<User>>(
+  /** Cấp lại access token. Trả về token mới (BE có thể xoay cả refresh token). */
+  refresh: async (): Promise<Response<loginResponse>> => {
+    const { data } = await axiosClient.post<Response<loginResponse>>(
       URL.AUTH.REFRESH,
       {},
       { withCredentials: true },
@@ -40,3 +42,5 @@ export const authService = {
     return data;
   },
 };
+
+export default authService;

@@ -32,15 +32,15 @@ const unwrapOne = (data: unknown): KocDto => {
 };
 
 export const kocService = {
-  /** `GET /api/kocs` -> danh sách KOC đã map sang shape UI. */
   list: async (params?: KocListParams): Promise<Koc[]> => {
-    const { data } = await axiosClient.get<unknown>(BASE, { params });
+    const { data } = await axiosClient.get(BASE, { params });
+    console.log("kocService.list data", data);
     return unwrapList(data).map(mapKocDtoToKoc);
   },
 
   /** Như `list` nhưng giữ lại metadata phân trang từ `PageResponse`. */
   page: async (params?: KocListParams): Promise<KocPage> => {
-    const { data } = await axiosClient.get<unknown>(BASE, { params });
+    const { data } = await axiosClient.get(BASE, { params });
     const raw = ((data as any)?.data ?? data) as any;
     return {
       content: unwrapList(data).map(mapKocDtoToKoc),

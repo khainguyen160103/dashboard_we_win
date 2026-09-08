@@ -1,6 +1,19 @@
-import type { Campaign } from "./types";
+import type { CampaignKOC } from "./types";
 
-export const initialMockCampaigns: Campaign[] = [
+/** Shape mock cũ (khác `Campaign` từ API) — chỉ dùng cho các modal lịch sử/demo. */
+export type LegacyCampaign = {
+  id: number;
+  name: string;
+  description: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  category: string;
+  brandName: string;
+  kocs: CampaignKOC[];
+};
+
+export const initialMockCampaigns: LegacyCampaign[] = [
   {
     id: 1,
     name: "Summer Sale 2024",

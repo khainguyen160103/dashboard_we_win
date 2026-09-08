@@ -3,6 +3,7 @@ import { InfoCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import type { Campaign, CampaignFormValues } from "./types";
 import { CATEGORY_OPTIONS } from "./campaign.utils";
+import { useState } from "react";
 
 interface CampaignFormModalProps {
   open: boolean;
@@ -29,11 +30,13 @@ const BRAND_OPTIONS = [
 ].map((b) => ({ value: b, label: b }));
 
 const STATUS_OPTIONS = [
-  { value: "Draft", label: "Nháp" },
-  { value: "Active", label: "Đang chạy" },
-  { value: "Completed", label: "Hoàn thành" },
-  { value: "Cancelled", label: "Đã hủy" },
+  { value: "DRAFT", label: "Nháp" },
+  { value: "ACTIVE", label: "Đang chạy" },
+  { value: "COMPLETED", label: "Hoàn thành" },
+  { value: "CANCELLED", label: "Đã hủy" },
 ];
+
+
 
 const TIER_OPTIONS = [
   { value: "any", label: "Không giới hạn" },
@@ -44,9 +47,8 @@ const TIER_OPTIONS = [
 ];
 
 const CAST_MODE_OPTIONS = [
-  { value: "no_cast", label: "Không Cast" },
+  { value: "free", label: "Free Cast" },
   { value: "paid_cast", label: "Trả phí Cast" },
-  { value: "free_cast", label: "Cast miễn phí" },
 ];
 
 const PM_OPTIONS = [
@@ -92,18 +94,17 @@ export function CampaignFormModal({
 
   const handleAfterOpen = (isOpen: boolean) => {
     if (isOpen && editingCampaign) {
+      const c = editingCampaign as any;
+      const start = c.startTime ?? c.startDate;
+      const end = c.endTime ?? c.endDate;
       form.setFieldsValue({
         name: editingCampaign.name,
         description: editingCampaign.description,
         brandName: editingCampaign.brandName,
-        category: editingCampaign.category,
-        status: editingCampaign.status,
-        startDate: editingCampaign.startDate
-          ? (dayjs(editingCampaign.startDate) as any)
-          : undefined,
-        endDate: editingCampaign.endDate
-          ? (dayjs(editingCampaign.endDate) as any)
-          : undefined,
+        category: c.category ?? c.productCategoryName,
+        status: editingCampaign.status as CampaignFormValues["status"],
+        startDate: start ? (dayjs(start) as any) : undefined,
+        endDate: end ? (dayjs(end) as any) : undefined,
       });
     }
     if (!isOpen) {
@@ -131,6 +132,11 @@ export function CampaignFormModal({
       })
       .catch(() => {});
   };
+  const [isFreeCast, setIsFreeCast] = useState(true);
+  const handleSelectCast = (e: string) => {
+    console.log("Selected cast mode:", e);
+    e === "free" ? setIsFreeCast(false) : setIsFreeCast(true);
+  }
 
   return (
     <Modal
@@ -145,11 +151,6 @@ export function CampaignFormModal({
       width={720}
       styles={{ body: { maxHeight: "70vh", overflowY: "auto", paddingRight: 8 } }}
     >
-      <p className="mb-4 mt-2 text-xs leading-relaxed text-gray-500">
-        Biểu mẫu minh hoạ <strong>đầy đủ trường dữ liệu cần thu thập</strong> khi tạo
-        chiến dịch — giúp đội dev chốt schema trước khi code. Form-inputs mang tính tham
-        khảo, submit chưa kết nối API trong bản demo.
-      </p>
 
       <Form form={form} layout="vertical" requiredMark="optional">
         {/* ── Thông tin cơ bản ─────────────────────────────────────────── */}
@@ -301,21 +302,24 @@ export function CampaignFormModal({
                 name="castMode"
                 initialValue="paid_cast"
               >
-                <Select options={CAST_MODE_OPTIONS} />
+                <Select onChange={handleSelectCast} options={CAST_MODE_OPTIONS} defaultValue="" />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item label="Phí Cast / KOC (đ)" name="castFeePerKoc">
-                <InputNumber<number>
-                  min={0}
-                  step={100000}
-                  placeholder="VD: 3,000,000"
-                  style={{ width: "100%" }}
-                  formatter={(v) => `${v ?? ""}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                  parser={(v) => Number((v ?? "").replace(/,/g, "")) || 0}
-                />
-              </Form.Item>
-            </Col>
+            {isFreeCast && (<>
+              <Col xs={24} sm={12}>
+                <Form.Item label="Phí Cast / KOC (đ)" name="castFeePerKoc">
+                  <InputNumber<number>
+                    min={0}
+                    step={100000}
+                    placeholder="VD: 3,000,000"
+                    style={{ width: "100%" }}
+                    formatter={(v) => `${v ?? ""}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                    parser={(v) => Number((v ?? "").replace(/,/g, "")) || 0}
+                  />
+                </Form.Item>
+              </Col>
+            </>)}
+
           </Row>
 
           <Row gutter={16}>
@@ -339,6 +343,14 @@ export function CampaignFormModal({
         {/* ── Phụ trách chiến dịch ─────────────────────────────────────── */}
         <Section title="Phụ trách chiến dịch">
           <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label={labelWithHint("NV Vận Hành", "Project Manager phụ trách vận hành")}
+                name="pmId"
+              >
+                <Select placeholder="Chọn PM..." options={PM_OPTIONS} allowClear />
+              </Form.Item>
+            </Col>
             <Col xs={24} sm={12}>
               <Form.Item
                 label={labelWithHint("PM", "Project Manager phụ trách")}

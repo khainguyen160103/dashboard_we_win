@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import type { User } from "../model/User";
+import { localStorageUtils } from "../utils/localStorageUtils";
+import { keyStore } from "../enums/keyStore";
 
 type AuthStore = {
   user: User | null;
@@ -11,6 +13,7 @@ type AuthStore = {
   hasRole: (role: string[]) => boolean;
   hasPermission: (permission: string[]) => boolean;
   can: (resource: string, action: string) => boolean | undefined;
+  checkAuth: () => boolean;
 };
 
 const initState = {
@@ -47,5 +50,9 @@ export const authStore = create<AuthStore>()((set, get) => ({
   hasPermission: (permission: string[]) => {
     const { user } = get();
     return permission.some((p) => user?.permissions?.includes(p));
+  },
+  checkAuth: () => {
+    const token = localStorageUtils.getItem(keyStore.ACCESS_TOKEN);
+    return !!token;
   },
 }));

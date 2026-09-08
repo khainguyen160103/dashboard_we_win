@@ -15,7 +15,7 @@ import { UserOutlined, SearchOutlined, FilterOutlined } from "@ant-design/icons"
 import type { TableColumnsType } from "antd";
 import type { KOCRecord, Platform, Gender } from "../koc/types";
 import type { Koc } from "../../model/User";
-import { useKocsQuery } from "../../hooks/query/useKocQuery";
+import { useKoc } from "../../hooks/query/useKocQuery";
 import { useAvailableKocsQuery } from "../../hooks/query/useCampaignKocQuery";
 import { initialMockCampaigns } from "./campaign.data";
 import { getPlatformIcon, getTierColor, formatFollowers } from "../koc/koc.utils";
@@ -97,7 +97,7 @@ export function InviteKOCModal({
 
   // Real KOC pool — campaign-scoped "available" list when campaignId is given,
   // otherwise the full warehouse (GET /kocs). Only fetch while the modal is open.
-  const warehouse = useKocsQuery(undefined, { enabled: open && !campaignId });
+  const warehouse = useKoc(undefined, { enabled: open && !campaignId });
   const available = useAvailableKocsQuery(campaignId, undefined, {
     enabled: open && Boolean(campaignId),
   });
