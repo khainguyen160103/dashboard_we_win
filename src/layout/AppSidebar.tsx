@@ -7,13 +7,10 @@ import {
   GridIcon,
   HorizontaLDots,
   UserCircleIcon,
-  LockIcon
-
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import { usePermission } from "../context/PermissionContext";
 import { authStore } from "../store/authStore";
-import { getActiveUserRole } from "../utils/rbac";
 
 type NavItem = {
   name: string;

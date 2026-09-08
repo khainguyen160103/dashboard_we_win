@@ -1,18 +1,15 @@
-import React from 'react'
 import { roleQuery, permissionQuery, useUser } from '../../hooks/query';
-import { Card, Checkbox, CheckboxProps, Col, Divider, Row, Select, Splitter, Table, TableColumnsType, Tooltip} from 'antd';
+import { Checkbox, CheckboxProps, Divider, Select, Table, TableColumnsType, Tooltip} from 'antd';
 import { User } from '../../model/User';
 import { Permission } from '../../model/Permission';
 
 export default function PermissionTab() {
-  const [userSelected, setUserSelected] = React.useState<User | null>(null);
-  const [permissionsSelected, setPermissionsSelected] = React.useState<boolean>(false);
   const { getRoles } = roleQuery;
   const { getPermissions } = permissionQuery;
   const { getUsers } = useUser;
 
   const { data: usersData } = getUsers();
-  const { data: roles } = getRoles();
+  getRoles();
   const { data: permissions } = getPermissions();
   console.log( permissions);
 

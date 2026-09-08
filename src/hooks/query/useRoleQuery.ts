@@ -64,7 +64,7 @@ export const roleQuery = {
 
     return useMutation({
       mutationFn: (id: string) => roleService.remove(id),
-      onSuccess: (_data, id) => {
+      onSuccess: () => {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.roles.lists(),
         });

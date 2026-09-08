@@ -371,7 +371,7 @@ export default function KocTable() {
     const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
     // ── Bộ lọc theo 1 trường (GMV / Product Category / Follower / Revenue) + giá trị nhập tay ──
-    const [filterField, setFilterField] = useState<FieldFilterKey>('gmv');
+    const [filterField] = useState<FieldFilterKey>('gmv');
     const [filterValue, setFilterValue] = useState('');
 
     const matchFieldFilter = (koc: Koc) => {
