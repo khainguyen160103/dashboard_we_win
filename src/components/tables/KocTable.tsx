@@ -33,12 +33,12 @@ const STATUS_OPTIONS = [
 // Lọc theo 1 trường + giá trị nhập tay
 type FieldFilterKey = 'gmv' | 'productCategory' | 'followers' | 'revenue';
 
-const FIELD_FILTER_OPTIONS: { value: FieldFilterKey; label: string }[] = [
-    { value: 'gmv', label: 'GMV' },
-    { value: 'productCategory', label: 'Ngành Hàng' },
-    { value: 'followers', label: 'Follower' },
-    { value: 'revenue', label: 'Doanh thu trung bình' },
-];
+// const FIELD_FILTER_OPTIONS: { value: FieldFilterKey; label: string }[] = [
+//     { value: 'gmv', label: 'GMV' },
+//     { value: 'productCategory', label: 'Ngành Hàng' },
+//     { value: 'followers', label: 'Follower' },
+//     { value: 'revenue', label: 'Doanh thu trung bình' },
+// ];
 
 const NUMERIC_FIELDS: FieldFilterKey[] = ['gmv', 'followers', 'revenue'];
 
