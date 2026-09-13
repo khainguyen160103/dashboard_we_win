@@ -15,6 +15,8 @@ export default function UserManagement() {
       key: '1',
       label: 'Quản lý người dùng',
       children: <UserTab />,
+
+
     }, {
       key: '2',
       label: 'Quản lý phân quyền',

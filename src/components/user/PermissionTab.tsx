@@ -9,7 +9,7 @@ export default function PermissionTab() {
   const { getUsers } = useUser;
 
   const { data: usersData } = getUsers();
-  getRoles();
+  const { data: roles } = getRoles();
   const { data: permissions } = getPermissions();
   console.log( permissions);
 
@@ -31,7 +31,9 @@ export default function PermissionTab() {
     console.log(`checked = ${e.target.checked}`);
   };
 
- 
+  const optiosn = [ 
+
+  ]
   const itemTableColumns: TableColumnsType<Permission> = [
     {
       title: 'Module',

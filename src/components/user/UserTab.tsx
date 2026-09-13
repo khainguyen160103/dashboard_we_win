@@ -78,6 +78,7 @@ export default function UserTab() {
       message.error("Có lỗi xảy ra khi xóa người dùng trên REST API server!");
     }
   };
+
   const getStatusColor = (status: string) => {
     const s = status?.toUpperCase();
     return s === "ACTIVE" || s === "SUCCESS" ? "success" : "default";
