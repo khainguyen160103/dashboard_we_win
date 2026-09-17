@@ -99,10 +99,13 @@ export function CampaignFormModal({
       const end = c.endTime ?? c.endDate;
       form.setFieldsValue({
         name: editingCampaign.name,
-        description: editingCampaign.description,
-        brandName: editingCampaign.brandName,
-        category: c.category ?? c.productCategoryName,
+        description: editingCampaign.description ?? undefined,
+        brandName: editingCampaign.brandName ?? undefined,
+        category: (c.category ?? c.productCategoryName) ?? undefined,
         status: editingCampaign.status as CampaignFormValues["status"],
+        campaignType: c.type,
+        targetKocCount: c.targetTotalKoc,
+        requiredTier: c.tierKocRequire,
         startDate: start ? (dayjs(start) as any) : undefined,
         endDate: end ? (dayjs(end) as any) : undefined,
       });
@@ -194,7 +197,7 @@ export function CampaignFormModal({
               <Form.Item
                 label="Trạng thái"
                 name="status"
-                initialValue="Draft"
+                initialValue="DRAFT"
                 rules={[{ required: true }]}
               >
                 <Select options={STATUS_OPTIONS} />
@@ -345,15 +348,7 @@ export function CampaignFormModal({
           <Row gutter={16}>
             <Col xs={24} sm={12}>
               <Form.Item
-                label={labelWithHint("NV Vận Hành", "Project Manager phụ trách vận hành")}
-                name="pmId"
-              >
-                <Select placeholder="Chọn PM..." options={PM_OPTIONS} allowClear />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label={labelWithHint("PM", "Project Manager phụ trách")}
+                label={labelWithHint("PM", "Project Manager phụ trách vận hành")}
                 name="pmId"
               >
                 <Select placeholder="Chọn PM..." options={PM_OPTIONS} allowClear />

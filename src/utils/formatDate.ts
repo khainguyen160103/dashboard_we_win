@@ -1,4 +1,4 @@
-export function formatDate(isoString: string | null | undefined): string {
+export function formatDate(isoString: string | Date | null | undefined): string {
   if (!isoString) return "-"; // hoặc "" tuỳ bạn muốn hiển thị gì
 
   const date = new Date(isoString);

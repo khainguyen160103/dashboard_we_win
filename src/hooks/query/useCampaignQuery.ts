@@ -12,7 +12,7 @@ type CampaignListParams = {
 
 export const useCampaigns = (params?: CampaignListParams) =>
   useQuery({
-    queryKey: ["campaigns", params],
+    queryKey: queryKeys.campaigns.list(params),
     queryFn: () => campaignService.list(params),
     staleTime: 1000 * 60 * 5, // 5 mins
   });
@@ -58,19 +58,6 @@ export const useDeleteCampaignMutation = () => {
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.lists() });
       queryClient.removeQueries({ queryKey: queryKeys.campaigns.detail(id) });
-    },
-  });
-};
-
-export const useInviteKocMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ campaignId, payload }: { campaignId: string; payload: { kocId: string; note?: string } }) =>
-      campaignService.inviteKoc(campaignId, payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.lists() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.lists() });
     },
   });
 };

@@ -1,7 +1,7 @@
 import type { KOCRecord } from "../koc/types";
 
-// ─── Campaign Status ─────────────────────────────────────────────────────────
-export type CampaignStatus = "Draft" | "Active" | "Completed" | "Cancelled";
+// ─── Campaign Status (khớp giá trị thật từ backend) ──────────────────────────
+export type CampaignStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
 // ─── KOC Pipeline Status within a Campaign ────────────────────────────────────
 export type KOCPipelineStatus =
@@ -37,25 +37,8 @@ export type CampaignKOC = {
   notes?: string;
 };
 
-// ─── Campaign ─────────────────────────────────────────────────────────────────
-export type Campaign = {
-  id: string;
-  name: string;
-  type: string;
-  productCategoryId: string;
-  productCategoryName: string;
-  brandName: string;
-  brandId: string;
-  status: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  targetTotalKoc: number;
-  tierKocRequire: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-};
+// ─── Campaign (định nghĩa gốc dùng chung toàn app) ────────────────────────────
+export type { Campaign } from "../../model/Campaign";
 
 // ─── Campaign type / Cast mode / Tier ────────────────────────────────────────
 export type CampaignType =

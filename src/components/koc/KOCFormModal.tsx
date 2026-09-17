@@ -148,10 +148,8 @@ export function KOCFormModal({ open, koc = null, loading = false, onClose, onSub
           </Form.Item>
           <Form.Item label="Trạng thái" name="status" rules={[{ required: true }]} style={{ flex: 1 }}>
             <Select placeholder="Chọn trạng thái">
-              <Select.Option value="Đang hợp tác">Đang hợp tác</Select.Option>
-              <Select.Option value="Tiềm năng">Tiềm năng</Select.Option>
-              <Select.Option value="Tạm dừng">Tạm dừng</Select.Option>
-              <Select.Option value="Ngừng hợp tác">Ngừng hợp tác</Select.Option>
+              <Select.Option value="ACTIVE">Đang hoạt động</Select.Option>
+              <Select.Option value="INACTIVE">Ngừng hoạt động</Select.Option>
             </Select>
           </Form.Item>
         </Flex>

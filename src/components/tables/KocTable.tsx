@@ -1,8 +1,8 @@
 import Table from 'antd/es/table';
 import { Koc } from '../../model/User';
 import type { ColumnType, TableProps } from 'antd/es/table';
-import { useState } from 'react';
-import {  Button, Checkbox, Flex, Input, Modal, Select, Space, Upload, Divider, Typography, message } from 'antd';
+import { useMemo, useState } from 'react';
+import {  Button, Checkbox, Flex, Input, InputNumber, Modal, Select, Space, Upload, Divider, Typography, message } from 'antd';
 import {
     FileExcelOutlined,
     CheckCircleTwoTone
@@ -27,21 +27,8 @@ const TIER_OPTIONS = [
 
 const STATUS_OPTIONS = [
     { value: 'ACTIVE', label: 'Đang hoạt động' },
-    { value: 'PENDING', label: 'Cần rà soát' }
+    { value: 'INACTIVE', label: 'Ngừng hoạt động' },
 ];
-
-// Lọc theo 1 trường + giá trị nhập tay
-type FieldFilterKey = 'gmv' | 'productCategory' | 'followers' | 'revenue';
-
-// const FIELD_FILTER_OPTIONS: { value: FieldFilterKey; label: string }[] = [
-//     { value: 'gmv', label: 'GMV' },
-//     { value: 'productCategory', label: 'Ngành Hàng' },
-//     { value: 'followers', label: 'Follower' },
-//     { value: 'revenue', label: 'Doanh thu trung bình' },
-// ];
-
-const NUMERIC_FIELDS: FieldFilterKey[] = ['gmv', 'followers', 'revenue'];
-
 
 const { Title } = Typography;
 
@@ -52,12 +39,6 @@ const fmt = (value?: string | number | null) =>
 export default function KocTable() {
 
     const allColumns: ColumnType<Koc>[] = [
-        {
-            title: 'Name',
-            dataIndex: 'name',
-            render: (text: string) => <a>{text}</a>,
-        },
-        
         {
             title: 'ID',
             dataIndex: 'id',
@@ -200,67 +181,18 @@ export default function KocTable() {
         },
         {
             title: 'Chi tiết',
-            dataIndex: '',
             key: 'x',
-            render: (user) => <Button type="primary" onClick={() => handleUserDetailOpenModal(user)}>Chi tiết</Button>,
+            render: (_, record) => <Button type="primary" onClick={() => handleUserDetailOpenModal(record)}>Chi tiết</Button>,
         },
           {
             title: 'Chiến dịch',
-            dataIndex: '',
             key: 'y',
-            render: (user) => <Button type="primary" onClick={() => handleCampaignOpenModal(user)}>Thêm</Button>,
+            render: (_, record) => <Button type="primary" onClick={() => handleCampaignOpenModal(record)}>Thêm</Button>,
         }
     ];
 
-    const columns: ColumnType<Koc>[] = [
-        {
-            title: 'Name',
-            dataIndex: 'name',
-            render: (text: string) => <a>{text}</a>,
-        },
-        {
-            title: 'Tên nhà sáng tạo',
-            dataIndex: 'name',
-            key: 'name',
-        },
-        {
-            title: 'Tier',
-            dataIndex: 'tier',
-            key: 'tier',
-        },
-        {
-            title: 'GMV',
-            dataIndex: 'gmv',
-            key: 'gmv',
-        },
-        {
-            title: 'Followers',
-            dataIndex: 'followers',
-            key: 'followers',
-        },
-        {
-            title: 'Trạng thái',
-            dataIndex: 'status',
-            key: 'status',
-        },
-        {
-            title: 'Địa chỉ',
-            dataIndex: 'address',
-            key: 'address',
-        },
-        {
-            title: 'Chi tiết',
-            dataIndex: '',
-            key: 'x',
-            render: (user) => <Button type="primary" onClick={() => handleUserDetailOpenModal(user)}>Chi tiết</Button>,
-        },
-         {
-            title: 'Chiến dịch',
-            dataIndex: '',
-            key: 'y',
-            render: (user) => <Button type="primary" onClick={() => handleCampaignOpenModal(user)}>Thêm</Button>,
-        }
-    ];
+    // Bộ cột hiển thị mặc định khi mở trang (người dùng bật thêm qua modal "+ Columns").
+    const DEFAULT_VISIBLE_KEYS = ['name', 'tier', 'gmv', 'followers', 'status', 'address', 'x', 'y'];
 
 
     const handleUserDetailOpenModal =  (user: Koc) => { 
@@ -312,8 +244,7 @@ export default function KocTable() {
 
     const queryClient = useQueryClient();
 
-    const defaultCheckedList = columns.map((item) => item.key);
-    const [checkedList, setCheckedList] = useState(defaultCheckedList);
+    const [checkedList, setCheckedList] = useState(DEFAULT_VISIBLE_KEYS);
     const [selectedUser, setSelectedUser] = useState<Koc | null>(null);
     const [editingKoc, setEditingKoc] = useState<Koc | null>(null);
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
@@ -369,34 +300,44 @@ export default function KocTable() {
 
     const [tierFilter, setTierFilter] = useState<string | undefined>(undefined);
     const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+    const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
+    const [gmvMin, setGmvMin] = useState<number | undefined>(undefined);
+    const [followersMin, setFollowersMin] = useState<number | undefined>(undefined);
+    const [revenueMin, setRevenueMin] = useState<number | undefined>(undefined);
 
-    // ── Bộ lọc theo 1 trường (GMV / Product Category / Follower / Revenue) + giá trị nhập tay ──
-    const [filterField] = useState<FieldFilterKey>('gmv');
-    const [filterValue, setFilterValue] = useState('');
-
-    const matchFieldFilter = (koc: Koc) => {
-        const raw = filterValue.trim();
-        if (!raw) return true;
-        const cell = koc[filterField];
-        if (NUMERIC_FIELDS.includes(filterField)) {
-            const num = Number(raw.replace(/[^\d.-]/g, ''));
-            if (!Number.isNaN(num)) return Number(cell) >= num;
-        }
-        return String(cell ?? '').toLowerCase().includes(raw.toLowerCase());
-    };
+    // Danh sách ngành hàng lấy từ chính dữ liệu KOC hiện có (luôn khớp dữ liệu thật).
+    const categoryOptions = useMemo(() => {
+        const values = new Set(
+            dataSource.map((koc) => koc.productCategory).filter((v): v is string => Boolean(v)),
+        );
+        return [...values].map((v) => ({ value: v, label: v }));
+    }, [dataSource]);
 
     const filteredData = dataSource.filter(
         (koc) =>
             (!tierFilter || koc.tier === tierFilter) &&
             (!statusFilter || koc.status === statusFilter) &&
-            matchFieldFilter(koc),
+            (!categoryFilter || koc.productCategory === categoryFilter) &&
+            (gmvMin === undefined || Number(koc.gmv) >= gmvMin) &&
+            (followersMin === undefined || Number(koc.followers) >= followersMin) &&
+            (revenueMin === undefined || Number(koc.revenue) >= revenueMin),
     );
 
-    const hasActiveFilter = Boolean(tierFilter || statusFilter || filterValue.trim());
+    const hasActiveFilter = Boolean(
+        tierFilter ||
+        statusFilter ||
+        categoryFilter ||
+        gmvMin !== undefined ||
+        followersMin !== undefined ||
+        revenueMin !== undefined,
+    );
     const clearFilters = () => {
         setTierFilter(undefined);
         setStatusFilter(undefined);
-        setFilterValue('');
+        setCategoryFilter(undefined);
+        setGmvMin(undefined);
+        setFollowersMin(undefined);
+        setRevenueMin(undefined);
     };
 
     const rowSelection: TableProps<Koc>['rowSelection'] = {
@@ -464,37 +405,34 @@ export default function KocTable() {
                 allowClear
                 placeholder="Lọc theo ngành hàng"
                 style={{ width: 200 }}
-                value={statusFilter}
-                onChange={(v) => setStatusFilter(v)}
-                options={STATUS_OPTIONS}
+                value={categoryFilter}
+                onChange={(v) => setCategoryFilter(v)}
+                options={categoryOptions}
             />
 
-            <Select
-                allowClear
-                placeholder="GMV"
-                style={{ width: 200 }}
-                value={statusFilter}
-                onChange={(v) => setStatusFilter(v)}
-                options={STATUS_OPTIONS}
-            /> 
+            <InputNumber
+                placeholder="GMV tối thiểu"
+                style={{ width: 180 }}
+                min={0}
+                value={gmvMin}
+                onChange={(v) => setGmvMin(v ?? undefined)}
+            />
 
-            <Select
-                allowClear
-                placeholder="Follower"
-                style={{ width: 200 }}
-                value={statusFilter}
-                onChange={(v) => setStatusFilter(v)}
-                options={STATUS_OPTIONS}
-            /> 
+            <InputNumber
+                placeholder="Follower tối thiểu"
+                style={{ width: 180 }}
+                min={0}
+                value={followersMin}
+                onChange={(v) => setFollowersMin(v ?? undefined)}
+            />
 
-            <Select
-                allowClear
-                placeholder="Doanh thu"
-                style={{ width: 200 }}
-                value={statusFilter}
-                onChange={(v) => setStatusFilter(v)}
-                options={STATUS_OPTIONS}
-            /> 
+            <InputNumber
+                placeholder="Doanh thu tối thiểu"
+                style={{ width: 180 }}
+                min={0}
+                value={revenueMin}
+                onChange={(v) => setRevenueMin(v ?? undefined)}
+            />
 
             {hasActiveFilter && (
                 <Button type="link" onClick={clearFilters}>

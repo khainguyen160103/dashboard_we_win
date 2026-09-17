@@ -1,64 +1,52 @@
 import { api as axiosClient } from "../api/request";
 import type { User } from "../model/User";
 
-export type ApiResponse<T> = {
-  success: boolean;
-  message: string;
-  data: T;
-  timestamp?: string;
-};
+import type { ApiResponse, ApiResponsePage } from "../model/request";
 
-export type PageData<T> = {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-};
 
 export const userService = {
   list: async (params?: { page?: number; limit?: number; q?: string }): Promise<User[]> => {
-    const { data } = await axiosClient.get<any>('/users', { params });
-
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data?.data?.content && Array.isArray(data.data.content)) {
-      return data.data.content;
-    }
-    if (data?.content && Array.isArray(data.content)) {
-      return data.content;
-    }
-    if (data?.data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    return [];
+    const response = await axiosClient.get<ApiResponsePage<User>>("/users", {
+      params,
+    });
+    return response.data.data;
   },
 
   get: async (id: string): Promise<User> => {
-    const { data } = await axiosClient.get<any>(`/users/${id}`);
-    return data?.data ?? data;
+    const response = await axiosClient.get<ApiResponse<User>>(`/users/${id}`);
+    return response.data.data;
   },
 
   create: async (payload: Partial<User>): Promise<User> => {
-    const { data } = await axiosClient.post<any>('/users', payload);
-    return data?.data ?? data;
+    const response = await axiosClient.post<ApiResponse<User>>(
+      "/users",
+      payload,
+    );
+    return response.data.data;
   },
 
   update: async (id: string, payload: Partial<User>): Promise<User> => {
-    const { data } = await axiosClient.patch<any>(`/users/${id}`, payload);
-    return data?.data ?? data;
+    const response = await axiosClient.patch<ApiResponse<User>>(
+      `/users/${id}`,
+      payload,
+    );
+    return response.data.data;
   },
 
   updateStatus: async (id: string, payload: Partial<User>): Promise<User> => {
-    const { data } = await axiosClient.patch<any>(`/users/${id}/status`, payload);
-    return data?.data ?? data;
+    const response = await axiosClient.patch<ApiResponse<User>>(
+      `/users/${id}/status`,
+      payload,
+    );
+    return response.data.data;
   },
 
   assignRoles: async (id: string, roleIds: string[]): Promise<User> => {
-    const { data } = await axiosClient.put<any>(`/users/${id}/roles`, { roleIds });
-    return data?.data ?? data;
+    const response = await axiosClient.put<ApiResponse<User>>(
+      `/users/${id}/roles`,
+      { roleIds },
+    );
+    return response.data.data;
   },
 
   remove: async (id: string): Promise<void> => {

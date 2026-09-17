@@ -3,20 +3,20 @@ import type { CampaignStatus, KOCPipelineStatus } from "./types";
 // ─── Campaign status colors ──────────────────────────────────────────────────
 export const getCampaignStatusColor = (status: CampaignStatus): string => {
   switch (status) {
-    case "Active":    return "success";
-    case "Draft":     return "default";
-    case "Completed": return "blue";
-    case "Cancelled": return "error";
+    case "ACTIVE":    return "success";
+    case "DRAFT":     return "default";
+    case "COMPLETED": return "blue";
+    case "CANCELLED": return "error";
     default:          return "default";
   }
 };
 
 export const getCampaignStatusLabel = (status: CampaignStatus): string => {
   switch (status) {
-    case "Active":    return "Đang chạy";
-    case "Draft":     return "Bản nháp";
-    case "Completed": return "Hoàn thành";
-    case "Cancelled": return "Đã hủy";
+    case "ACTIVE":    return "Đang chạy";
+    case "DRAFT":     return "Bản nháp";
+    case "COMPLETED": return "Hoàn thành";
+    case "CANCELLED": return "Đã hủy";
     default:          return status;
   }
 };

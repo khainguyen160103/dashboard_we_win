@@ -9,7 +9,7 @@ export const useKoc = (
   options?: { enabled?: boolean },
 ) =>
   useQuery({
-    queryKey: ["koc" + JSON.stringify(params)],
+    queryKey: queryKeys.kocs.list(params),
     queryFn: () => kocService.list(params),
     staleTime: 1000 * 60 * 5,
     enabled: options?.enabled,

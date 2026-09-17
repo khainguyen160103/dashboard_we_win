@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Button, Card, Empty, Modal, Spin, Table, Tag, Typography, message } from "antd";
 import type { TableColumnsType } from "antd";
@@ -10,7 +9,6 @@ import {
   type CampaignKocDto,
   type CampaignKocStatus,
 } from "../../model/CampaignKoc";
-import { useCampaignPicker } from "./useCampaignPicker";
 import {
   JOB_STAGES,
   JOB_SYSTEM_COUNTS,
@@ -989,26 +987,3 @@ export function CampaignVideoPanel({
 
 // ── Fmt export dùng chung nếu cần ────────────────────────────────────────────
 export { fmtVnd, fmtNum };
-
-// ════════════════════════════════════════════════════════════════════════════
-// Tab wrappers (Quản lý chiến dịch)
-// ════════════════════════════════════════════════════════════════════════════
-function PickerTab({ render }: { render: (campaignId: string) => ReactNode }) {
-  const { picker, campaignId } = useCampaignPicker();
-  return (
-    <div className="flex flex-col gap-4">
-      {picker}
-      {campaignId ? render(campaignId) : <Empty description="Chưa có chiến dịch nào" />}
-    </div>
-  );
-}
-
-export const CampaignRosterTab = () => (
-  <PickerTab render={(id) => <CampaignRosterPanel campaignId={id} />} />
-);
-export const CampaignSampleTab = () => (
-  <PickerTab render={(id) => <CampaignSamplePanel campaignId={id} />} />
-);
-// Tab "Job & Duyệt Video" tự có bộ lọc chiến dịch riêng (mặc định "Tất cả chiến dịch"),
-// giống bản demo — không dùng chung PickerTab.
-export const CampaignVideoTab = () => <CampaignVideoPanel />;

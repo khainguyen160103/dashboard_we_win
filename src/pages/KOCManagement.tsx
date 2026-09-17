@@ -37,19 +37,19 @@ export default function KOCManagement() {
 
             {/* Phân bổ koc */}
             <div className="grid grid-cols-2 gap-4 mb-5">
-              <CardByProductCategory />
+              <CardByProductCategory kocs={kocs} />
               <CardChartByFollower />
             </div>
 
 
             {/* Cơ hội*/}
             <div className="grid grid-cols-2 gap-4 mb-5">
-              <CardTopKocByProduct />
-              <CardKocJoinByPruductCategory />
+              <CardTopKocByProduct kocs={kocs} />
+              <CardKocJoinByPruductCategory kocs={kocs} />
             </div>
 
             <div className="mb-5">
-              <CardKocNotJoin />
+              <CardKocNotJoin kocs={kocs} />
             </div>
 
 

@@ -23,7 +23,6 @@ import {
   useInviteKocsMutation,
   useRemoveCampaignKocMutation,
 } from "../../hooks/query/useCampaignKocQuery";
-import { useCampaignPicker } from "./useCampaignPicker";
 import {
   CAMPAIGN_KOC_STATUS_LABEL,
   type CampaignKocDto,
@@ -708,22 +707,3 @@ function InviteFromPoolModal({
   );
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Tab: chọn chiến dịch + panel mời KOC (dùng trong Campaign Management)
-// ════════════════════════════════════════════════════════════════════════════
-export function CampaignInviteTab() {
-  const { picker, campaignId, campaignName } = useCampaignPicker();
-
-  return (
-    <div className="flex flex-col gap-4">
-      {picker}
-      {campaignId ? (
-        <CampaignInvitePanel campaignId={campaignId} campaignName={campaignName} />
-      ) : (
-        <Empty description="Chưa có chiến dịch nào" />
-      )}
-    </div>
-  );
-}
-
-export default CampaignInviteTab;

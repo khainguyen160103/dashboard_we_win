@@ -4,6 +4,10 @@ export interface Campaign {
   type: string;
   status: string;
   description?: string | null;
+  /** Nhãn hàng gắn với chiến dịch (hiển thị ở bảng danh sách & trang chi tiết). */
+  brandName?: string | null;
+  /** Ngành hàng / chủ đề chiến dịch. */
+  category?: string | null;
   startTime?: string | Date | null;
   endTime?: string | Date | null;
   targetTotalKoc?: number | null;
@@ -36,6 +40,8 @@ export type CampaignRequest = {
   type: string;
   status: string;
   description?: string;
+  brandName?: string;
+  category?: string;
   startTime?: string;
   endTime?: string;
   targetTotalKoc?: number;

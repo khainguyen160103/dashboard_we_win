@@ -1,11 +1,11 @@
-import { Button, Card, Table } from "antd";
+import { Button, Card, Space, Table } from "antd";
 import type { TableColumnsType } from "antd";
 import type { Campaign } from "./types";
 import { formatDate } from "../../utils/formatDate";
 import { useNavigate } from "react-router";
 interface CampaignTableProps {
-  campaigns: Campaign[];
-
+  campaigns?: Campaign[];
+  onEdit?: (campaign: Campaign) => void;
 }
 const STATUS_OPTIONS = [
   { key: "DRAFT", label: "Nháp" },
@@ -16,7 +16,7 @@ const STATUS_OPTIONS = [
 
 
 
-export function CampaignTable({ campaigns }: CampaignTableProps) {
+export function CampaignTable({ campaigns, onEdit }: CampaignTableProps) {
   const navigate = useNavigate();
   const columns: TableColumnsType<Campaign> = [
     {
@@ -75,16 +75,21 @@ export function CampaignTable({ campaigns }: CampaignTableProps) {
     {
       title: "Hành động",
 
-      key: "",
-      width: 120,
+      key: "actions",
+      width: 200,
       align: "center",
       render: (_, record) => (
-        <Button
-          onClick={() => navigate(`/campaigns/${record.id}`)}
-          type="primary"
-        >
-          Xem chi tiết
-        </Button>
+        <Space>
+          <Button
+            onClick={() => navigate(`/campaigns/${record.id}`)}
+            type="primary"
+          >
+            Xem chi tiết
+          </Button>
+          {onEdit && (
+            <Button onClick={() => onEdit(record)}>Sửa</Button>
+          )}
+        </Space>
       ),
     },
   ];

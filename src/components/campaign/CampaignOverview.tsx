@@ -5,15 +5,16 @@ import { CampaignWarning } from './CampaignWarning'
 import { CampaignTable } from './CampaignTable'
 
 export default function CampaignOverview() {
-    const { data , isLoading } = useCampaigns()
-    const totalCampaignsActive = data?.data.content.filter((c: any) => c.status === 'ACTIVE').length || 0; 
-     
+    const { data, isLoading } = useCampaigns()
+    const campaigns = data?.content ?? [];
+    const totalCampaignsActive = campaigns.filter((c) => c.status === 'ACTIVE').length;
+
   return (
     <Spin spinning={isLoading}>
           <Flex gap={16} wrap="wrap" style={{ marginBottom: 24 }}>
               <CardCampaign
                   title="Tổng chiến dịch"
-                  value={data?.data.totalElements || 0}
+                  value={data?.totalElements || 0}
                   description='Toàn bộ chiến dịch trong hệ thống demo — bấm "Xem thêm" cuối bảng để xem hết'
               />
               <CardCampaign
@@ -35,10 +36,10 @@ export default function CampaignOverview() {
           </Flex>
 
 
-          <CampaignWarning campaigns={data?.data.content || []} />
-          
+          <CampaignWarning campaigns={campaigns} />
+
            <CampaignTable
-            campaigns={data?.data.content}
+            campaigns={campaigns}
           />
     </Spin>
   )
