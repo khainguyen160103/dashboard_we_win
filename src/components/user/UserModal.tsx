@@ -2,13 +2,25 @@ import { useEffect } from "react";
 import { Form, Input, Modal, Select } from "antd";
 import type { User } from "../../model/User";
 import { roleQuery } from "../../hooks/query/useRoleQuery";
-
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm, } from "react-hook-form";
 export type UserFormValues = {
   name: string;
   email: string;
   role: string;
   status: string;
 };
+
+const updateUserSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: z.string().trim().email("Email không hợp lệ"),
+  role: z.string().uuid("Vai trò không hợp lệ"),
+  status: z.string().max(20, "Trạng thái không hợp lệ"),
+});
+
+type updateUserRequest = z.infer<typeof updateUserSchema>;
+
 
 type Props = {
   open: boolean;
@@ -19,37 +31,36 @@ type Props = {
 };
 
 export function UserModal({ open, editingUser, loading, onClose, onSubmit }: Props) {
-  const [form] = Form.useForm<UserFormValues>();
+
+  const { handleSubmit, control, reset } = useForm<updateUserRequest>({
+    resolver: zodResolver(updateUserSchema),
+
+  });
   const { data: rolesData } = roleQuery.getRoles();
 
-  useEffect(() => {
-    if (!open) return;
 
-    if (editingUser) {
-      form.setFieldsValue({
-        name: editingUser.fullName,
-        email: editingUser.email,
-        role: editingUser.roleId,
-        status: editingUser.status,
-      });
-    } else {
-      form.resetFields();
-      form.setFieldsValue({ status: "ACTIVE" });
-    }
-  }, [open, editingUser, form]);
-
+  console.log("editingUser", editingUser); // Debugging line to check the value of editingUser
   const handleOk = () => {
-    form
-      .validateFields()
-      .then((values) => {
-        onSubmit(values);
-      })
-      .catch(() => {
-      });
+    handleSubmit((values) => {
+      onSubmit(values);
+    })();
   };
 
+  useEffect(() => {
+    if (editingUser) {
+      console.log("Resetting form with editingUser:", editingUser);
+      // Debugging line to check the value of editingUser
+      reset({
+        name: editingUser.fullName,
+        email: editingUser.email,
+        role: editingUser.roleId || "",
+        status: editingUser.status,
+      })
+    }
+  }, [editingUser, reset]);
+
+
   const handleCancel = () => {
-    form.resetFields();
     onClose();
   };
 
@@ -62,56 +73,86 @@ export function UserModal({ open, editingUser, loading, onClose, onSubmit }: Pro
       confirmLoading={loading}
       okText={editingUser ? "Cập nhật" : "Tạo mới"}
       cancelText="Hủy"
-      destroyOnClose
+
     >
-      <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-        <Form.Item
-          label="Họ và tên"
+      <form className="flex flex-col gap-4">
+
+        <Controller
           name="name"
-          rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
-        >
-          <Input placeholder="Ví dụ: Nguyễn Văn A" />
-        </Form.Item>
+          control={control}
+          render={({ field }) => (
+            <Form.Item
+              label="Họ và tên"
 
-        <Form.Item
-          label="Email"
+              rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
+            >
+              <Input {...field} placeholder="Ví dụ: Nguyễn Văn A" />
+            </Form.Item>
+          )}
+        />
+
+
+        <Controller
           name="email"
-          rules={[
-            { required: true, message: "Vui lòng nhập email" },
-            { type: "email", message: "Email không hợp lệ" },
-          ]}
-        >
-          <Input placeholder="Ví dụ: user@example.com" />
-        </Form.Item>
+          control={control}
+          render={({ field }) => (
+            <Form.Item
+              label="Email"
+              rules={[
+                { required: true, message: "Vui lòng nhập email" },
+                { type: "email", message: "Email không hợp lệ" },
+              ]}
+            >
+              <Input {...field} placeholder="Ví dụ: user@example.com" />
+            </Form.Item>
+          )}
+        />
 
-        <Form.Item
-          label="Vai trò"
+        <Controller
           name="role"
-          rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}
+          control={control}
+          render={({ field }) => (
+            <Form.Item
+              label="Vai trò"
+              rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}
+            >
+              <Select
+                {...field}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Chọn vai trò"
+                options={(rolesData ?? []).map((role) => ({
+                  label: role.name,
+                  value: role.id,
+                }))}
+              />
+            </Form.Item>
+          )}
         >
-          <Select
-            placeholder="Chọn vai trò"
-            options={(rolesData ?? []).map((role) => ({
-              label: role.name,
-              value: role.id,
-            }))}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Trạng thái"
+        </Controller>
+        <Controller
           name="status"
-          rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+          control={control}
+          render={({ field }) => (
+            <Form.Item
+              label="Trạng thái"
+              rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+            >
+              <Select
+                {...field}
+                placeholder="Chọn trạng thái"
+                value={field.value}
+                onChange={(value) => field.onChange(value)}
+                options={[
+                  { label: "Đang hoạt động", value: "ACTIVE" },
+                  { label: "Không hoạt động", value: "INACTIVE" },
+                ]}
+              />
+            </Form.Item>
+          )}
         >
-          <Select
-            placeholder="Chọn trạng thái"
-            options={[
-              { label: "Đang hoạt động", value: "ACTIVE" },
-              { label: "Không hoạt động", value: "INACTIVE" },
-            ]}
-          />
-        </Form.Item>
-      </Form>
+        </Controller>
+      </form>
     </Modal>
   );
 }

@@ -3,7 +3,11 @@ import { ApiResponse } from "../model/request";
 import type { Role, RolePayload } from "../model/Role";
 
 export const roleService = {
-  list: async (params?: { page?: number; limit?: number; q?: string }): Promise<Role[]> => {
+  list: async (params?: {
+    page?: number;
+    limit?: number;
+    q?: string;
+  }): Promise<Role[]> => {
     const response = await axiosClient.get<ApiResponse<Role[]>>("/roles", {
       params,
     });
@@ -31,12 +35,17 @@ export const roleService = {
     return data.data;
   },
 
-  assignPermissions: async (entries: { roleId: string; permissionId: string }[]): Promise<void> => {
-    await axiosClient.post('/role/permission', entries);
+  assignPermissions: async (
+    entries: { roleId: string; permissionId: string }[],
+  ): Promise<void> => {
+    await axiosClient.post("/role/permission", entries);
   },
 
   remove: async (id: string): Promise<void> => {
     await axiosClient.delete(`/roles/${id}`);
+  },
+  getRoleByUserId: async (id: string) => {
+    await axiosClient.get(`/role/user/${id}`);
   },
 };
 

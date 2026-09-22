@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
 import {
-  BoxCubeIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
@@ -11,7 +10,8 @@ import {
 } from "../icons";
 
 import { useSidebar } from "../context/SidebarContext";
-import { usePermission } from "../context/PermissionContext";
+import { localStorageUtils } from "../utils/localStorageUtils";
+import { keyStore } from "../enums/keyStore";
 
 type NavItem = {
   name: string;
@@ -19,10 +19,7 @@ type NavItem = {
   path: string;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
-
-
-const AppSidebar: React.FC = () => {
-  const allNavItems: NavItem[] = [
+const allNavItems: NavItem[] = [
     {
       icon: <GridIcon />,
       name: "Dashboard",
@@ -41,40 +38,39 @@ const AppSidebar: React.FC = () => {
       path: "/brand",
 
     },
-    {
-      icon: <BoxCubeIcon />,
-      name: "Vận hành chiến dịch",
-      path: "/campaigns",
-      subItems: [
-        { name: "Tổng quan", path: "/campaigns" },
-        { name: "Tất cả chiến dịch", path: "/campaigns/list" },
-      ],
-    },
+  // {
+  //   icon: <BoxCubeIcon />,
+  //   name: "Vận hành chiến dịch",
+  //   path: "/campaigns",
+
+  // },
 
     {
       icon: <UserCircleIcon />,
       name: "Quản lý User",
-      path: "/users",
-      subItems: [
-        { name: "Người dùng", path: "/users" },
-        { name: "Vai trò", path: "/roles" },
-        { name: "Quyền hạn", path: "/permissions" },
-      ],
+      path: "/permissions",
+
     },
 
   ];
 
+const AppSidebar: React.FC = () => {
+
+
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const { permissions } = usePermission();
-
-  const allowedPaths = permissions ? Object.keys(permissions) : [];
-
+  //const allowedPaths = [];
+  //console.log("Allowed paths in AppSidebar:", allowedPaths);
   const location = useLocation();
 
   const allPaths = allNavItems.filter((item) => item.path);
 
-  const itemNavbar = allPaths.filter((path) => allowedPaths.includes(path.path));
 
+  const permissions = localStorageUtils.getItem(keyStore.PERMISSIONS)
+  const allowedPaths = Object.keys(permissions) ?? [];
+  console.log(allowedPaths)
+
+  const itemNavbar = allPaths.filter((path) => allowedPaths.includes(path.path));
+  console.log("permissions on app sidebar", permissions)
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
     index: number;
@@ -288,7 +284,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(itemNavbar, "main")}
+              {renderMenuItems(itemNavbar, "main")} 
             </div>
           </div>
         </nav>

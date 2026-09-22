@@ -32,3 +32,15 @@ export type PermissionPayload = Omit<
   Permission,
   "id" | "createdAt" | "updatedAt" | "version" | "isDeleted"
 >;
+
+export type PermissionFlags = {
+  canView: boolean;
+  canWrite: boolean;
+  canCreate: boolean;
+  canRemove: boolean;
+  canExport: boolean;
+};
+
+export type PermissionGroup = {
+  [key: string]: PermissionFlags;
+};

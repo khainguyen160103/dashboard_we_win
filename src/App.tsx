@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
-import UserManagement from "./pages/UserManagement";
 import CampaignManagement from "./pages/CampaignManagement";
 import CampaignListManagement from "./pages/CampaignListManagement";
 import JobReview from "./pages/JobReview";
@@ -14,7 +13,6 @@ import AppLayout from "./layout/AppLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { CampaignDetail } from "./pages/CampaignDetail";
 import { PermissionManagement } from "./pages/PermissionManagement";
-import { RoleManagement } from "./pages/RoleManagement";
 
 export default function App() {
   return (
@@ -22,7 +20,7 @@ export default function App() {
       <Router>
         {/* <ScrollToTop /> */}
         <Routes>
-          {/* Dashboard Layout (Protected) */}
+          { }
           <Route
             element={
               <ProtectedRoute>
@@ -42,10 +40,9 @@ export default function App() {
             <Route path="/campaigns" element={<CampaignManagement />} />
             <Route path="/campaigns/list" element={<CampaignListManagement />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
-            <Route path="/job-review" element={<JobReview />} />
-            <Route path="/users" element={<UserManagement />} />
+            <Route path="/job-review" element={<JobReview />} /> 
             <Route path="/permissions" element={<PermissionManagement />} />
-            <Route path="/roles" element={<RoleManagement />} />
+
 
           </Route>
 
