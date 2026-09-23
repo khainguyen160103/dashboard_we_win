@@ -12,7 +12,6 @@ export default function UserTab() {
   const { create, update, delete: deleteUser, getUsers } = useUser;
 
   const { data: usersData, isLoading, isFetching } = getUsers({ q: searchQuery });
-  const createUser = create();
   const updateUser = update();
 
   const handleOpenAdd = () => {

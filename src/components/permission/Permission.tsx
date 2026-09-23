@@ -1,6 +1,7 @@
 import { Button, Checkbox, Flex, Select, Table } from 'antd'
 import { permissionQuery, roleQuery } from '../../hooks/query';
 import { useState } from 'react';
+import type { Permission as PermissionRow } from '../../model/Permission';
 
 
 
@@ -13,7 +14,7 @@ export const Permission = () => {
   const { getPermissionsByRoleId, getPermissions } = permissionQuery
 
 
-  const { data } = getPermissionsByRoleId(roleSelected)
+  getPermissionsByRoleId(roleSelected)
   const { data: permissions, isLoading: isPermissionLoading } = getPermissions()
 
 
@@ -38,50 +39,50 @@ export const Permission = () => {
     [
       { title: 'Module/Quyền', dataIndex: 'name', key: 'name' },
       {
-        title: 'Xem', dataIndex: 'canView', key: 'description', render: (_, record) => (
+        title: 'Xem', dataIndex: 'canView', key: 'description', render: (_: unknown, record: PermissionRow) => (
           <Checkbox
-            checked={checkedIds.includes(record.id)}
-            onChange={(e) => handleToggle(record.id, e.target.checked)}
+            checked={checkedIds.includes(String(record.id))}
+            onChange={(e) => handleToggle(String(record.id), e.target.checked)}
           />
         )
       },
       {
-        title: 'Thêm', dataIndex: 'canCreate', key: 'description', render: (_, record) => (
+        title: 'Thêm', dataIndex: 'canCreate', key: 'description', render: (_: unknown, record: PermissionRow) => (
           <Checkbox
-            checked={checkedIds.includes(record.id)}
-            onChange={(e) => handleToggle(record.id, e.target.checked)}
+            checked={checkedIds.includes(String(record.id))}
+            onChange={(e) => handleToggle(String(record.id), e.target.checked)}
           />
         )
       },
       {
-        title: 'Sửa', dataIndex: 'canUpdate', key: 'description', render: (_, record) => (
+        title: 'Sửa', dataIndex: 'canUpdate', key: 'description', render: (_: unknown, record: PermissionRow) => (
           <Checkbox
-            checked={checkedIds.includes(record.id)}
-            onChange={(e) => handleToggle(record.id, e.target.checked)}
+            checked={checkedIds.includes(String(record.id))}
+            onChange={(e) => handleToggle(String(record.id), e.target.checked)}
           />
         )
       },
       {
-        title: 'Xoá', dataIndex: 'canDelete', key: 'description', render: (_, record) => (
+        title: 'Xoá', dataIndex: 'canDelete', key: 'description', render: (_: unknown, record: PermissionRow) => (
           <Checkbox
-            checked={checkedIds.includes(record.id)}
-            onChange={(e) => handleToggle(record.id, e.target.checked)}
+            checked={checkedIds.includes(String(record.id))}
+            onChange={(e) => handleToggle(String(record.id), e.target.checked)}
           />
         )
       },
       {
-        title: 'Xuất Excel', dataIndex: 'canExport', key: 'description', render: (_, record) => (
+        title: 'Xuất Excel', dataIndex: 'canExport', key: 'description', render: (_: unknown, record: PermissionRow) => (
           <Checkbox
-            checked={checkedIds.includes(record.id)}
-            onChange={(e) => handleToggle(record.id, e.target.checked)}
+            checked={checkedIds.includes(String(record.id))}
+            onChange={(e) => handleToggle(String(record.id), e.target.checked)}
           />
         )
       },
       {
-        title: 'Ghi vào', dataIndex: 'canWrite', key: 'description', render: (_, record) => (
+        title: 'Ghi vào', dataIndex: 'canWrite', key: 'description', render: (_: unknown, record: PermissionRow) => (
           <Checkbox
-            checked={checkedIds.includes(record.id)}
-            onChange={(e) => handleToggle(record.id, e.target.checked)}
+            checked={checkedIds.includes(String(record.id))}
+            onChange={(e) => handleToggle(String(record.id), e.target.checked)}
           />
         )
       },

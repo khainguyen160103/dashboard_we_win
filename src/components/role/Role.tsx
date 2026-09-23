@@ -9,7 +9,7 @@ export const Role = () => {
 
   const { getRoles } = roleQuery;
   const { isOpen, openModal, closeModal } = useModal();
-  const { data: rolesData, isLoading, isFetching } = getRoles();
+  const { data: rolesData } = getRoles();
 
 
 
