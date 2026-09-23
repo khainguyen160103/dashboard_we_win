@@ -21,7 +21,6 @@ export default function UserTab() {
   };
 
   const handleOpenEdit = (record: User) => {
-    console.log(record);
     setEditingUser(record);
     setModalOpen(true);
   };
@@ -64,7 +63,7 @@ export default function UserTab() {
       message.error("Có lỗi xảy ra khi kết nối với REST API server!");
     }
   };
-  // Giữ lại cho form thêm/sửa người dùng sẽ nối sau — tránh lỗi "unused" khi build.
+
   void handleClose;
   void handleSubmit;
 

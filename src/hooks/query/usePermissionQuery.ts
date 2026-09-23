@@ -9,10 +9,17 @@ export const permissionQuery = {
     useQuery({
       queryKey: queryKeys.permissions.list(params),
       queryFn: () => permissionService.list(params),
-      staleTime: 1000 * 60 * 30, // 30 minutes cache in memory
-      gcTime: 1000 * 60 * 60, // 1 hour garbage collection time
+      staleTime: 1000 * 60 * 30,
+      gcTime: 1000 * 60 * 60,
     }),
-
+  getPermissionsByRoleId: (id: string) =>
+    useQuery({
+      queryKey: ["item", id],
+      queryFn: () => permissionService.getPermissionsByRoleId(id),
+      staleTime: 1000 * 60 * 30,
+      gcTime: 1000 * 60 * 60,
+      enabled: !!id,
+    }),
   getPermission: (id: string | number, enabled = true) =>
     useQuery({
       queryKey: queryKeys.permissions.detail(Number(id) || 0),
@@ -74,11 +81,3 @@ export const permissionQuery = {
     });
   },
 };
-
-
-
-
-
-
-
-

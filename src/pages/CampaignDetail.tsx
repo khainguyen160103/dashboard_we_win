@@ -22,6 +22,8 @@ import {
   CampaignSamplePanel,
   CampaignVideoPanel,
 } from "../components/campaign/CampaignExtraPanels";
+import { MOCK_CAMPAIGNS } from "./Dashboard/mockData";
+import type { Campaign } from "../model/Campaign";
 
 ChartJS.register(
   CategoryScale,
@@ -133,10 +135,31 @@ function MetricCard({ metric }: { metric: Metric }) {
   );
 }
 
+// Khi chưa gọi được API / chiến dịch chưa tồn tại trên BE (vd. demo họp trước khi có data thật) —
+// dùng tạm 1 chiến dịch mẫu để xem được đầy đủ luồng thay vì màn hình "Không tìm thấy".
+const mockCampaignFor = (id?: string): Campaign => {
+  const m = MOCK_CAMPAIGNS.find((c) => c.id === id) ?? MOCK_CAMPAIGNS[0];
+  return {
+    id: id || m.id,
+    name: m.name,
+    type: "brand_awareness",
+    status: m.status,
+    description:
+      "Chiến dịch minh hoạ (dữ liệu mẫu) — dùng để xem trước toàn bộ luồng khi chưa có dữ liệu thật từ backend.",
+    brandName: m.brandName,
+    startTime: m.startTime,
+    endTime: m.endTime,
+    targetTotalKoc: m.targetTotalKoc,
+    tierKocRequire: "any",
+  };
+};
+
 export const CampaignDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: campaign, isLoading, isError } = useCampaign(id ?? "");
+  const { data: realCampaign, isLoading, isError } = useCampaign(id ?? "");
+  const usingMockCampaign = !isLoading && (isError || !realCampaign);
+  const campaign = realCampaign ?? (usingMockCampaign ? mockCampaignFor(id) : undefined);
 
   if (isLoading) {
     return (
@@ -146,7 +169,7 @@ export const CampaignDetail = () => {
     );
   }
 
-  if (isError || !campaign) {
+  if (!campaign) {
     return <Empty description="Không tìm thấy chiến dịch" className="py-16" />;
   }
 
@@ -201,7 +224,12 @@ export const CampaignDetail = () => {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <Title level={3} className="!mb-1">
-              {campaign.name}
+              {campaign.name}{" "}
+              {usingMockCampaign && (
+                <Tag color="gold" className="align-middle text-xs">
+                  Dữ liệu minh hoạ
+                </Tag>
+              )}
             </Title>
             <Text type="secondary">
               {[

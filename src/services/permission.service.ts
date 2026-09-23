@@ -38,6 +38,10 @@ export const permissionService = {
     return data?.data ?? data;
   },
 
+  getPermissionsByRoleId: async (id: string) => {
+    const { data } = await axiosClient.get(`/permissions/role/${id}`);
+    return data?.data;
+  },
   create: async (payload: PermissionPayload): Promise<Permission> => {
     const { data } = await axiosClient.post<any>("/permissions", payload);
     return data?.data ?? data;

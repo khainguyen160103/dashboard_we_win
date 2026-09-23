@@ -9,6 +9,7 @@ import {
   type CampaignKocDto,
   type CampaignKocStatus,
 } from "../../model/CampaignKoc";
+import { MOCK_CAMPAIGN_KOCS, withFallback } from "../../pages/Dashboard/mockData";
 import {
   JOB_STAGES,
   JOB_SYSTEM_COUNTS,
@@ -65,9 +66,13 @@ const countBy = (rows: CampaignKocDto[], ...statuses: CampaignKocStatus[]) =>
 // Tầng 4 · Danh sách KOC tham gia
 // ════════════════════════════════════════════════════════════════════════════
 export function CampaignRosterPanel({ campaignId }: { campaignId: string }) {
-  const { data, isLoading, isError } = useCampaignKocsQuery(campaignId);
+  const query = useCampaignKocsQuery(campaignId);
+  const { isLoading, isError } = query;
   const { data: campaign } = useCampaign(campaignId);
-  const rows = useMemo(() => data ?? [], [data]);
+  const { rows, usingMock } = useMemo(
+    () => withFallback<CampaignKocDto>(query, MOCK_CAMPAIGN_KOCS),
+    [query.data, query.isError, query.isLoading],
+  );
 
   const target = Number(campaign?.targetTotalKoc ?? 0);
   const registered = countBy(rows, "REGISTERED", "WEWIN_REVIEW", "BRAND_REVIEW", "APPROVED", "DEALING", "CONFIRMED", "THANKED");
@@ -113,13 +118,18 @@ export function CampaignRosterPanel({ campaignId }: { campaignId: string }) {
   return (
     <Card className="rounded-2xl border border-gray-100 shadow-sm">
       <Title level={5} className="!mb-0">
-        Danh sách KOC tham gia
+        Danh sách KOC tham gia{" "}
+        {usingMock && (
+          <Tag color="gold" className="align-middle text-xs">
+            Dữ liệu minh hoạ
+          </Tag>
+        )}
       </Title>
       <Text type="secondary" className="text-xs">
         Trạng thái tham gia &amp; thông tin liên hệ theo từng KOC
       </Text>
 
-      {isError ? (
+      {isError && !usingMock ? (
         <Empty className="py-10" description="Không tải được danh sách KOC tham gia" />
       ) : (
         <Spin spinning={isLoading}>
@@ -182,8 +192,12 @@ const sampleStageOf = (s: CampaignKocStatus): SampleStage => {
 };
 
 export function CampaignSamplePanel({ campaignId }: { campaignId: string }) {
-  const { data, isLoading, isError } = useCampaignKocsQuery(campaignId);
-  const rows = useMemo(() => data ?? [], [data]);
+  const query = useCampaignKocsQuery(campaignId);
+  const { isLoading, isError } = query;
+  const { rows, usingMock } = useMemo(
+    () => withFallback<CampaignKocDto>(query, MOCK_CAMPAIGN_KOCS),
+    [query.data, query.isError, query.isLoading],
+  );
 
   const withStage = useMemo(
     () => rows.map((r) => ({ ...r, sampleStage: sampleStageOf(r.status) })),
@@ -222,14 +236,19 @@ export function CampaignSamplePanel({ campaignId }: { campaignId: string }) {
   return (
     <Card className="rounded-2xl border border-gray-100 shadow-sm">
       <Title level={5} className="!mb-0">
-        Nhãn hàng gửi hàng mẫu cho KOC
+        Nhãn hàng gửi hàng mẫu cho KOC{" "}
+        {usingMock && (
+          <Tag color="gold" className="align-middle text-xs">
+            Dữ liệu minh hoạ
+          </Tag>
+        )}
       </Title>
       <Text type="secondary" className="text-xs">
         Điều kiện tiên quyết trước khi KOC quay video demo — trạng thái đang suy diễn từ pipeline
         (chưa có API hàng mẫu riêng).
       </Text>
 
-      {isError ? (
+      {isError && !usingMock ? (
         <Empty className="py-10" description="Không tải được dữ liệu" />
       ) : (
         <Spin spinning={isLoading}>
