@@ -1,5 +1,8 @@
-import CampaignOverview from "../components/campaign/CampaignOverview";
+import { Campaigns } from "../components/campaign/Campaigns";
+
 
 export default function CampaignManagement() {
-  return <CampaignOverview />;
+  return (
+    <Campaigns />
+  );
 }

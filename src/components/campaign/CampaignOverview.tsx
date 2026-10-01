@@ -3,10 +3,13 @@ import { useCampaigns } from '../../hooks/query/useCampaignQuery'
 import { CardCampaign } from './CardCampaign'
 import { CampaignWarning } from './CampaignWarning'
 import { CampaignTable } from './CampaignTable'
+import { useCampaign } from '../../hooks/useCampaign'
 
 export default function CampaignOverview() {
-    const { data, isLoading } = useCampaigns()
-    const campaigns = data?.content ?? [];
+    const { overview } = useCampaign
+    const { data, isLoading } = overview()
+    console.log(data)
+    const campaigns = data.data ?? [];
     const totalCampaignsActive = campaigns.filter((c) => c.status === 'ACTIVE').length;
 
   return (
