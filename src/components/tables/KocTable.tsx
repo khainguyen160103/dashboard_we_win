@@ -1,8 +1,7 @@
 import Table from 'antd/es/table';
-import { Koc } from '../../model/User';
 import type { ColumnType, TableProps } from 'antd/es/table';
 import { useMemo, useState } from 'react';
-import {  Button, Checkbox, Flex, Input, InputNumber, Modal, Select, Space, Upload, Divider, Typography, message } from 'antd';
+import { Button, Checkbox, Flex, Input, InputNumber, Modal, Select, Space, Tag, Upload, Divider, Typography, message } from 'antd';
 import {
     FileExcelOutlined,
     CheckCircleTwoTone
@@ -10,13 +9,13 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useModal } from '../../hooks/useModal';
 import { KOCFormModal } from '../koc/KOCFormModal';
-import { useKocs } from '../../hooks/query/useKocQuery';
-import { useCampaigns } from '../../hooks/query/useCampaignQuery';
+import { useKoc } from '@/feature/koc/hook/useKoc';
+import { mapKocToRequest, type KocView as Koc } from '@/feature/koc/model/Koc';
+import { useCampaigns } from '../../feature/campaign/hook/useCampaignQuery';
 import { queryKeys } from '../../hooks/query/queryKeys';
-import { mapKocToRequest } from '../../model/Koc';
-import campaignKocService from '../../services/campaignKoc.service';
+import campaignKocService from '../../feature/campaign/service/campaignKoc.service';
 
-// Dữ liệu KOC được lấy từ API (GET /kocs) thông qua hook useKocs — xem bên dưới.
+// Dữ liệu KOC lấy từ API (GET /kocs) qua `useKoc.list()` — xem bên dưới.
 
 const TIER_OPTIONS = [
     { value: 'Nano', label: 'Nano' },
@@ -30,155 +29,83 @@ const STATUS_OPTIONS = [
     { value: 'INACTIVE', label: 'Ngừng hoạt động' },
 ];
 
+const STATUS_COLOR: Record<string, string> = { ACTIVE: 'green', INACTIVE: 'default' };
+const TIER_COLOR: Record<string, string> = { Mega: 'gold', Macro: 'purple', Micro: 'blue', Nano: 'default' };
+
 const { Title } = Typography;
 
 const fmt = (value?: string | number | null) =>
     typeof value === 'number' ? value.toLocaleString('vi-VN') : (value ?? '');
 
+// ── Render ô hiển thị ──
+const dash = <span className="text-gray-300">—</span>;
+const num = (v?: number | null) => (v || v === 0 ? <span className="font-mono">{v.toLocaleString('vi-VN')}</span> : dash);
+const vnd = (v?: number | null) => (v ? <span className="font-mono">{v.toLocaleString('vi-VN')} ₫</span> : dash);
+const pct = (v?: number | null) => (v || v === 0 ? <span className="font-mono">{v}%</span> : dash);
+const text = (v?: string | null) => v || dash;
+const link = (v?: string | null) =>
+    v ? (
+        <a href={v.startsWith('http') ? v : `https://${v}`} target="_blank" rel="noopener noreferrer">
+            {v.replace(/^https?:\/\/(www\.)?/, '')}
+        </a>
+    ) : (
+        dash
+    );
+const statusLabel = (v?: string) => STATUS_OPTIONS.find((o) => o.value === v)?.label ?? v;
+
 
 export default function KocTable() {
 
     const allColumns: ColumnType<Koc>[] = [
-        {
-            title: 'ID',
-            dataIndex: 'id',
-            key: 'id',
-        },
+        { title: 'ID', dataIndex: 'id', key: 'id', render: text },
         {
             title: 'Tên nhà sáng tạo',
             dataIndex: 'name',
             key: 'name',
+            fixed: 'left',
+            render: (_, r) => (
+                <div>
+                    <div className="font-semibold text-gray-900">{r.name || '—'}</div>
+                    {r.productCategory && <div className="text-xs text-gray-500">{r.productCategory}</div>}
+                </div>
+            ),
         },
-        {
-            title: 'ID TikTok',
-            dataIndex: 'idTiktok',
-            key: 'idTiktok',
-        },
-        {
-            title: 'Link TikTok',
-            dataIndex: 'linkTiktok',
-            key: 'linkTiktok',
-        },
-        {
-            title: 'Facebook',
-            dataIndex: 'facebook',
-            key: 'facebook',
-        },
-        {
-            title: 'Zalo',
-            dataIndex: 'zalo',
-            key: 'zalo',
-        },
-        {
-            title: 'Loại KOC',
-            dataIndex: 'kocType',
-            key: 'kocType',
-        },
+        { title: 'ID TikTok', dataIndex: 'idTiktok', key: 'idTiktok', render: text },
+        { title: 'Link TikTok', dataIndex: 'linkTiktok', key: 'linkTiktok', render: link },
+        { title: 'Facebook', dataIndex: 'facebook', key: 'facebook', render: link },
+        { title: 'Zalo', dataIndex: 'zalo', key: 'zalo', render: text },
+        { title: 'Loại KOC', dataIndex: 'kocType', key: 'kocType', render: text },
         {
             title: 'Tier',
             dataIndex: 'tier',
             key: 'tier',
+            render: (v: string) => (v ? <Tag color={TIER_COLOR[v]}>{v}</Tag> : dash),
         },
         {
             title: 'Trạng thái',
             dataIndex: 'status',
             key: 'status',
+            render: (v: string) => (v ? <Tag color={STATUS_COLOR[v] ?? 'default'}>{statusLabel(v)}</Tag> : dash),
         },
-        {
-            title: 'GMV',
-            dataIndex: 'gmv',
-            key: 'gmv',
-        },
-        {
-            title: 'Doanh thu',
-            dataIndex: 'revenue',
-            key: 'revenue',
-        },
-        {
-            title: 'Followers',
-            dataIndex: 'followers',
-            key: 'followers',
-        },
-        {
-            title: 'Lượt xem',
-            dataIndex: 'viewer',
-            key: 'viewer',
-        },
-        {
-            title: 'Tỷ lệ tương tác',
-            dataIndex: 'engagementRate',
-            key: 'engagementRate',
-        },
-        {
-            title: 'Giá bán trung bình',
-            dataIndex: 'averageSellingPrice',
-            key: 'averageSellingPrice',
-        },
-        {
-            title: 'Doanh số Livestream',
-            dataIndex: 'livestreamTotalAmount',
-            key: 'livestreamTotalAmount',
-        },
-        {
-            title: 'Doanh số Video',
-            dataIndex: 'videoTotalAmount',
-            key: 'videoTotalAmount',
-        },
-        {
-            title: 'GMV / Khách hàng',
-            dataIndex: 'gmvPerCustomer',
-            key: 'gmvPerCustomer',
-        },
-        {
-            title: 'GMV theo sản phẩm',
-            dataIndex: 'gmvByProduct',
-            key: 'gmvByProduct',
-        },
-        {
-            title: 'GMV theo kênh bán',
-            dataIndex: 'gmvPerSaleChanel',
-            key: 'gmvPerSaleChanel',
-        },
-        {
-            title: 'Follower Nữ (%)',
-            dataIndex: 'followerFemale',
-            key: 'followerFemale',
-        },
-        {
-            title: 'Follower Nam (%)',
-            dataIndex: 'followerMale',
-            key: 'followerMale',
-        },
-        {
-            title: 'Độ tuổi Follower',
-            dataIndex: 'followerAge',
-            key: 'followerAge',
-        },
-        {
-            title: 'Khu vực hàng đầu',
-            dataIndex: 'topLocation',
-            key: 'topLocation',
-        },
-        {
-            title: 'Địa chỉ',
-            dataIndex: 'address',
-            key: 'address',
-        },
-        {
-            title: 'Độ tuổi con',
-            dataIndex: 'ageOfChildren',
-            key: 'ageOfChildren',
-        },
-        {
-            title: 'Số tài khoản ngân hàng',
-            dataIndex: 'bankAccount',
-            key: 'bankAccount',
-        },
-        {
-            title: 'Loại ngân hàng',
-            dataIndex: 'typeBank',
-            key: 'typeBank',
-        },
+        { title: 'GMV', dataIndex: 'gmv', key: 'gmv', align: 'right', sorter: (a, b) => a.gmv - b.gmv, render: vnd },
+        { title: 'Doanh thu', dataIndex: 'revenue', key: 'revenue', align: 'right', sorter: (a, b) => a.revenue - b.revenue, render: vnd },
+        { title: 'Followers', dataIndex: 'followers', key: 'followers', align: 'right', sorter: (a, b) => a.followers - b.followers, render: num },
+        { title: 'Lượt xem', dataIndex: 'viewer', key: 'viewer', align: 'right', render: num },
+        { title: 'Tỷ lệ tương tác', dataIndex: 'engagementRate', key: 'engagementRate', align: 'right', render: pct },
+        { title: 'Giá bán trung bình', dataIndex: 'averageSellingPrice', key: 'averageSellingPrice', align: 'right', render: vnd },
+        { title: 'Doanh số Livestream', dataIndex: 'livestreamTotalAmount', key: 'livestreamTotalAmount', align: 'right', render: vnd },
+        { title: 'Doanh số Video', dataIndex: 'videoTotalAmount', key: 'videoTotalAmount', align: 'right', render: vnd },
+        { title: 'GMV / Khách hàng', dataIndex: 'gmvPerCustomer', key: 'gmvPerCustomer', align: 'right', render: vnd },
+        { title: 'GMV theo sản phẩm', dataIndex: 'gmvByProduct', key: 'gmvByProduct', align: 'right', render: vnd },
+        { title: 'GMV theo kênh bán', dataIndex: 'gmvPerSaleChanel', key: 'gmvPerSaleChanel', align: 'right', render: vnd },
+        { title: 'Follower Nữ (%)', dataIndex: 'followerFemale', key: 'followerFemale', align: 'right', render: pct },
+        { title: 'Follower Nam (%)', dataIndex: 'followerMale', key: 'followerMale', align: 'right', render: pct },
+        { title: 'Độ tuổi Follower', dataIndex: 'followerAge', key: 'followerAge', align: 'right', render: num },
+        { title: 'Khu vực hàng đầu', dataIndex: 'topLocation', key: 'topLocation', render: text },
+        { title: 'Địa chỉ', dataIndex: 'address', key: 'address', render: text },
+        { title: 'Độ tuổi con', dataIndex: 'ageOfChildren', key: 'ageOfChildren', render: text },
+        { title: 'Số tài khoản ngân hàng', dataIndex: 'bankAccount', key: 'bankAccount', render: text },
+        { title: 'Loại ngân hàng', dataIndex: 'typeBank', key: 'typeBank', render: text },
         {
             title: 'Chi tiết',
             key: 'x',
@@ -198,7 +125,6 @@ export default function KocTable() {
     const handleUserDetailOpenModal =  (user: Koc) => { 
         setSelectedUser(user);
         openUserDetailModal();
-        console.log("User detail modal opened for user:", user);
     }
 
 
@@ -209,7 +135,7 @@ export default function KocTable() {
     }
 
     const handleAddSelectedToCampaign = () => {
-        setCampaignKocs(selectedRowKeys.map((key) => dataSource.find((user) => user.id === key)!).filter(Boolean) as Koc[]);
+        setCampaignKocs(selectedRows);
         setCampaignId(undefined);
         openCampaignModal();
     }
@@ -248,6 +174,7 @@ export default function KocTable() {
     const [selectedUser, setSelectedUser] = useState<Koc | null>(null);
     const [editingKoc, setEditingKoc] = useState<Koc | null>(null);
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+    const [selectedRows, setSelectedRows] = useState<Koc[]>([]);
     const [campaignKocs, setCampaignKocs] = useState<Koc[]>([]);
     const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
     const [isInviting, setIsInviting] = useState(false);
@@ -269,6 +196,7 @@ export default function KocTable() {
             );
             closeCampaignModal();
             setSelectedRowKeys([]);
+            setSelectedRows([]);
             setCampaignKocs([]);
             setCampaignId(undefined);
         } catch (err: any) {
@@ -281,7 +209,22 @@ export default function KocTable() {
     };
 
 
-    const { kocs: dataSource, isLoading, isError, createKoc, updateKoc, isCreating, isUpdating } = useKocs();
+    // Phân trang phía server: BE trả 20 dòng/trang (`totalElements` = tổng số KOC).
+    const [pagination, setPagination] = useState({ page: 0, size: 20 });
+    const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+    const { data, isLoading, isFetching, isError } = useKoc.page({
+        page: pagination.page,
+        size: pagination.size,
+        status: statusFilter,
+    });
+    const dataSource = useMemo(() => data?.content ?? [], [data]);
+    const totalKocs = data?.totalElements ?? 0;
+    const createMutation = useKoc.create();
+    const updateMutation = useKoc.update();
+    const createKoc = createMutation.mutateAsync;
+    const updateKoc = updateMutation.mutateAsync;
+    const isCreating = createMutation.isPending;
+    const isUpdating = updateMutation.isPending;
 
 
     const { data: campaigns, isLoading: isCampaignsLoading } = useCampaigns();
@@ -297,9 +240,7 @@ export default function KocTable() {
         label: c.name ?? c.title ?? String(c.id),
     }));
 
-
     const [tierFilter, setTierFilter] = useState<string | undefined>(undefined);
-    const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
     const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
     const [gmvMin, setGmvMin] = useState<number | undefined>(undefined);
     const [followersMin, setFollowersMin] = useState<number | undefined>(undefined);
@@ -313,37 +254,41 @@ export default function KocTable() {
         return [...values].map((v) => ({ value: v, label: v }));
     }, [dataSource]);
 
+    // Trạng thái lọc phía server (param `status`); các bộ lọc còn lại lọc trong trang đang xem.
     const filteredData = dataSource.filter(
         (koc) =>
             (!tierFilter || koc.tier === tierFilter) &&
-            (!statusFilter || koc.status === statusFilter) &&
             (!categoryFilter || koc.productCategory === categoryFilter) &&
             (gmvMin === undefined || Number(koc.gmv) >= gmvMin) &&
             (followersMin === undefined || Number(koc.followers) >= followersMin) &&
             (revenueMin === undefined || Number(koc.revenue) >= revenueMin),
     );
 
-    const hasActiveFilter = Boolean(
+    const hasPageFilter = Boolean(
         tierFilter ||
-        statusFilter ||
         categoryFilter ||
         gmvMin !== undefined ||
         followersMin !== undefined ||
         revenueMin !== undefined,
     );
+    const hasActiveFilter = hasPageFilter || Boolean(statusFilter);
     const clearFilters = () => {
         setTierFilter(undefined);
         setStatusFilter(undefined);
+        setPagination((p) => ({ ...p, page: 0 }));
         setCategoryFilter(undefined);
         setGmvMin(undefined);
         setFollowersMin(undefined);
         setRevenueMin(undefined);
     };
 
+    // Giữ lựa chọn khi chuyển trang (mỗi trang là 1 lần gọi API khác nhau).
     const rowSelection: TableProps<Koc>['rowSelection'] = {
-        onChange: (selectedRowKeys: React.Key[], selectedRows: Koc[]) => {
-            setSelectedRowKeys(selectedRowKeys as string[]);
-            console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+        selectedRowKeys,
+        preserveSelectedRowKeys: true,
+        onChange: (keys: React.Key[], rows: Koc[]) => {
+            setSelectedRowKeys(keys as string[]);
+            setSelectedRows(rows.filter(Boolean));
         },
     };
 
@@ -398,7 +343,10 @@ export default function KocTable() {
                 placeholder="Lọc theo trạng thái"
                 style={{ width: 200 }}
                 value={statusFilter}
-                onChange={(v) => setStatusFilter(v)}
+                onChange={(v) => {
+                    setStatusFilter(v);
+                    setPagination((p) => ({ ...p, page: 0 }));
+                }}
                 options={STATUS_OPTIONS}
             />
             <Select
@@ -447,16 +395,34 @@ export default function KocTable() {
             </div>
         )}
 
+        {hasPageFilter && (
+            <div className="mb-3 text-xs text-amber-700">
+                Bộ lọc Tier / Ngành hàng / GMV / Follower / Doanh thu đang áp dụng trong trang hiện tại
+                ({filteredData.length}/{dataSource.length} KOC của trang {pagination.page + 1}).
+            </div>
+        )}
+
         <div className="rounded-lg border border-slate-200 overflow-hidden">
-            <Table
+            <Table<Koc>
                 dataSource={filteredData}
                 columns={newColumns}
                 rowKey="id"
-                rowSelection={{...rowSelection }}
-                loading={isLoading}
+                rowSelection={rowSelection}
+                loading={isLoading || isFetching}
                 bordered
                 sticky
                 scroll={{ x: 'max-content' }}
+                pagination={{
+                    current: pagination.page + 1,
+                    pageSize: pagination.size,
+                    total: totalKocs,
+                    showSizeChanger: true,
+                    pageSizeOptions: [20, 50, 100],
+                    showTotal: (t, [from, to]) => `${from}–${to} / ${t.toLocaleString('vi-VN')} KOC`,
+                    onChange: (page, size) =>
+                        setPagination((p) => ({ page: size !== p.size ? 0 : page - 1, size })),
+                }}
+                locale={{ emptyText: hasActiveFilter ? 'Không có KOC nào khớp bộ lọc' : 'Chưa có KOC' }}
             />
         </div>
         
@@ -510,7 +476,7 @@ export default function KocTable() {
                                 </div>
                             </div>
                             <div>
-                                <CheckCircleTwoTone />  {selectedUser.status}
+                                <CheckCircleTwoTone />  {statusLabel(selectedUser.status)}
                             </div>
                         </div>
                         <Divider />

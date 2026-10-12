@@ -20,6 +20,8 @@ export type BrandPage = {
 const unwrapList = (data: unknown): BrandDto[] => {
   const d = data as any;
   if (Array.isArray(d)) return d;
+  // BE: ApiResponse<PageResponse<T>> = { data: { data: [...], page, size, ... } }
+  if (Array.isArray(d?.data?.data)) return d.data.data;
   if (Array.isArray(d?.data?.content)) return d.data.content;
   if (Array.isArray(d?.content)) return d.content;
   if (Array.isArray(d?.data)) return d.data;

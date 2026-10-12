@@ -1,4 +1,4 @@
-import type { KOCRecord } from "../koc/types";
+import type { KOCRecord } from "../../../components/koc/types";
 
 // ─── Campaign Status (khớp giá trị thật từ backend) ──────────────────────────
 export type CampaignStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -38,7 +38,7 @@ export type CampaignKOC = {
 };
 
 // ─── Campaign (định nghĩa gốc dùng chung toàn app) ────────────────────────────
-export type { Campaign } from "../../model/Campaign";
+export type { Campaign } from "./Campaign";
 
 // ─── Campaign type / Cast mode / Tier ────────────────────────────────────────
 export type CampaignType =

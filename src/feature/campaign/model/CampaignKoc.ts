@@ -3,6 +3,7 @@
  * (endpoint `/api/campaigns/{campaignId}/kocs`).
  */
 export type CampaignKocStatus =
+  | "PENDING_INVITE"
   | "INVITED"
   | "REGISTERED"
   | "WEWIN_REVIEW"
@@ -58,6 +59,7 @@ export type UpdateCampaignKocPayload = {
 };
 
 export const CAMPAIGN_KOC_STATUS_LABEL: Record<CampaignKocStatus, string> = {
+  PENDING_INVITE: "Chờ mời",
   INVITED: "Đã mời",
   REGISTERED: "Đã đăng ký",
   WEWIN_REVIEW: "WeWin sơ duyệt",
@@ -70,6 +72,7 @@ export const CAMPAIGN_KOC_STATUS_LABEL: Record<CampaignKocStatus, string> = {
 };
 
 export const CAMPAIGN_KOC_STATUS_COLOR: Record<CampaignKocStatus, string> = {
+  PENDING_INVITE: "#bfbfbf",
   INVITED: "#8c8c8c",
   REGISTERED: "#13c2c2",
   WEWIN_REVIEW: "#1890ff",

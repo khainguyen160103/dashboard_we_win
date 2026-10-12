@@ -1,12 +1,12 @@
-import { api as axiosClient } from "../api/request";
+import { api as axiosClient } from "../../../api/request";
 import type {
   CampaignKocDto,
   InviteKocPayload,
   UpdateCampaignKocPayload,
 } from "../model/CampaignKoc";
-import type { KocDto, KocListParams } from "../model/Koc";
-import { mapKocDtoToKoc } from "../model/Koc";
-import type { Koc } from "../model/User";
+import type { KocDto, KocListParams } from "../../koc/model/Koc";
+import { mapKocDtoToKoc } from "../../koc/model/Koc";
+import type { Koc } from "../../../model/User";
 
 // baseURL = `${VITE_BASE_URL}` (http://localhost:8080/api)
 // Controller: campaign-service `CampaignKocController` @RequestMapping("/api/campaigns/{campaignId}/kocs")
@@ -15,6 +15,8 @@ const base = (campaignId: string) => `/campaigns/${campaignId}/kocs`;
 const unwrapList = <T,>(data: unknown): T[] => {
   const d = data as any;
   if (Array.isArray(d)) return d;
+  // BE: ApiResponse<PageResponse<T>> = { data: { data: [...], page, size, ... } }
+  if (Array.isArray(d?.data?.data)) return d.data.data;
   if (Array.isArray(d?.data?.content)) return d.data.content;
   if (Array.isArray(d?.content)) return d.content;
   if (Array.isArray(d?.data)) return d.data;

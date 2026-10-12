@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { Button, Input, Modal, Select, Space, Table, Tag } from "antd";
 import type { TableColumnsType } from "antd";
-import type { CampaignKocDto, CampaignKocStatus } from "../../model/CampaignKoc";
+import type { CampaignKocDto, CampaignKocStatus } from "../model/CampaignKoc";
 import {
   CAMPAIGN_KOC_STATUS_COLOR,
   CAMPAIGN_KOC_STATUS_LABEL,
-} from "../../model/CampaignKoc";
-import { useCampaignKocsQuery } from "../../hooks/query/useCampaignKocQuery";
-import { formatVndShort } from "./campaignKoc.metrics";
-import { getTierColor } from "../koc/koc.utils";
+} from "../model/CampaignKoc";
+import { useCampaignKocsQuery } from "../hook/useCampaignKocQuery";
+import { formatVndShort } from "../utils/campaignKoc.metrics";
+import { getTierColor } from "../../../components/koc/koc.utils";
 
 interface CampaignParticipantsModalProps {
   open: boolean;

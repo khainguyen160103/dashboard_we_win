@@ -5,12 +5,6 @@ import { roleQuery } from "../../hooks/query/useRoleQuery";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, } from "react-hook-form";
-export type UserFormValues = {
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-};
 
 const updateUserSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -19,7 +13,7 @@ const updateUserSchema = z.object({
   status: z.string().max(20, "Trạng thái không hợp lệ"),
 });
 
-type updateUserRequest = z.infer<typeof updateUserSchema>;
+export type updateUserRequest = z.infer<typeof updateUserSchema>;
 
 
 type Props = {
@@ -27,7 +21,7 @@ type Props = {
   editingUser: User | null;
   loading?: boolean;
   onClose: () => void;
-  onSubmit: (values: UserFormValues) => void;
+  onSubmit: (values: updateUserRequest) => void;
 };
 
 export function UserModal({ open, editingUser, loading, onClose, onSubmit }: Props) {
@@ -38,8 +32,6 @@ export function UserModal({ open, editingUser, loading, onClose, onSubmit }: Pro
   });
   const { data: rolesData } = roleQuery.getRoles();
 
-
-  console.log("editingUser", editingUser); // Debugging line to check the value of editingUser
   const handleOk = () => {
     handleSubmit((values) => {
       onSubmit(values);
@@ -48,8 +40,7 @@ export function UserModal({ open, editingUser, loading, onClose, onSubmit }: Pro
 
   useEffect(() => {
     if (editingUser) {
-      console.log("Resetting form with editingUser:", editingUser);
-      // Debugging line to check the value of editingUser
+
       reset({
         name: editingUser.fullName,
         email: editingUser.email,
@@ -62,6 +53,12 @@ export function UserModal({ open, editingUser, loading, onClose, onSubmit }: Pro
 
   const handleCancel = () => {
     onClose();
+    reset({
+      name: "",
+      email: "",
+      role: "",
+      status: "",
+    });
   };
 
   return (

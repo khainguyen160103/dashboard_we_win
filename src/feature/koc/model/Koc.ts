@@ -1,11 +1,46 @@
-import type { Koc } from "./User";
+import type { Koc as KocView } from "@/model/User";
 
-/**
- * Payload trả về từ backend `GET /api/kocs` (campaign-service `KocDto`).
- * Lưu ý field khác tên với UI `Koc`: `kocId`, `follower` (số ít), không có `gmv`/`tier`/`name`.
- */
+/** Shape UI mà bảng/form KOC đang dùng (`id`, `name`, `tier`, `gmv`, `followers`…). */
+export type { KocView };
+
+export interface Koc {
+    userId:string;
+    fullname:string;
+    bankAccount?:string;
+    typeBank?:string;
+    follower:number;
+    revenue:number;
+    averageSellingPrice:number;
+    engagementRate:number;
+    livestreamTotalAmount:number;
+    videoTotalAmount:number;
+    viewer:number;
+    linkTiktok?:string;
+    facebook?:string;
+    zalo?:string;
+    gmvPerCustomer:number;
+    gmvByProduct:number;
+    gmvPerSaleChanel:number;
+    followerFemale:number;
+    followerMale:number;
+    followerAge:number;
+    topLocation?:string;
+    address?:string;
+    ageOfChildren?:string;
+    idTiktok?:string;
+    kocType?:string;
+    productCategoryId?:string;
+    status?:string;
+    verrsion?:number;
+    createdAt?:string;
+    updatedAt?:string;
+    createdBy?:string;
+}
 export type KocDto = {
-  kocId: string;
+  /** Id thật BE trả về (`GET /kocs` -> `userId`, koc_id = user.id). */
+  userId: string;
+  /** Tên cũ của id — giữ để tương thích nếu BE trả `kocId`. */
+  kocId?: string;
   fullname: string;
   bankAccount?: string;
   typeBank?: string;
@@ -94,9 +129,22 @@ export type KocRequest = {
   status?: string;
 };
 
+/** Tier suy ra từ số follower (BE chưa trả tier riêng — `kocType` là ngành hàng). */
+export const tierOfFollowers = (follower?: number | null): string => {
+  if (!follower) return "";
+  if (follower >= 1_000_000) return "Mega";
+  if (follower >= 500_000) return "Macro";
+  if (follower >= 50_000) return "Micro";
+  return "Nano";
+};
+
+/** `"MỸ PHẨM, LÀM ĐẸP, CHĂM SÓC DA", CHĂM SÓC CÁ NHÂN` -> bỏ dấu `"` thừa từ file import CSV. */
+const cleanKocType = (v?: string | null) =>
+  (v ?? "").replace(/"/g, "").replace(/\s*,\s*/g, ", ").replace(/\s+/g, " ").trim();
+
 /** BE `KocDto` -> UI `Koc` (giữ nguyên các component/table hiện có). */
-export const mapKocDtoToKoc = (dto: KocDto): Koc => ({
-  id: dto.kocId,
+export const mapKocDtoToKoc = (dto: KocDto): KocView => ({
+  id: dto.userId ?? dto.kocId ?? "",
   name: dto.fullname ?? "",
   bankAccount: dto.bankAccount ?? "",
   typeBank: dto.typeBank ?? "",
@@ -106,7 +154,7 @@ export const mapKocDtoToKoc = (dto: KocDto): Koc => ({
   livestreamTotalAmount: dto.livestreamTotalAmount ?? 0,
   videoTotalAmount: dto.videoTotalAmount ?? 0,
   viewer: dto.viewer ?? 0,
-  linkTiktok: dto.linkTiktok ?? "",
+  linkTiktok: dto.linkTiktok || (dto.idTiktok ? `https://www.tiktok.com/@${dto.idTiktok.replace(/^@/, "")}` : ""),
   facebook: dto.facebook ?? "",
   zalo: dto.zalo ?? "",
   gmvPerCustomer: dto.gmvPerCustomer ?? 0,
@@ -119,17 +167,18 @@ export const mapKocDtoToKoc = (dto: KocDto): Koc => ({
   address: dto.address ?? "",
   ageOfChildren: dto.ageOfChildren != null ? String(dto.ageOfChildren) : "",
   idTiktok: dto.idTiktok ?? "",
-  kocType: dto.kocType ?? "",
-  // BE dùng chung `kocType` cho cả "Tier" lẫn "Loại KOC" (xem KocFilterRequest).
-  tier: dto.kocType ?? "",
-  gmv: dto.gmvByProduct ?? 0,
+  // `kocType` BE trả về là ngành hàng của KOC (VD "FASHION NỮ") — dùng luôn làm "Ngành hàng".
+  kocType: cleanKocType(dto.kocType),
+  tier: tierOfFollowers(dto.follower),
+  // BE hiện chỉ trả `revenue` (doanh thu), chưa có `gmvByProduct` -> lấy revenue làm GMV.
+  gmv: dto.gmvByProduct ?? dto.revenue ?? 0,
   followers: dto.follower ?? 0,
   status: dto.status ?? "",
-  productCategory: dto.productCategoryId ?? "",
+  productCategory: cleanKocType(dto.kocType),
 });
 
 /** UI `Koc` (hoặc form values) -> body gửi lên BE. */
-export const mapKocToRequest = (koc: Partial<Koc>): KocRequest => ({
+export const mapKocToRequest = (koc: Partial<KocView>): KocRequest => ({
   fullname: koc.name ?? "",
   email: koc.email?.trim() || undefined,
   bankAccount: koc.bankAccount,
@@ -157,7 +206,7 @@ export const mapKocToRequest = (koc: Partial<Koc>): KocRequest => ({
       ? Number.parseInt(String(koc.ageOfChildren), 10) || undefined
       : undefined,
   idTiktok: koc.idTiktok,
-  kocType: koc.kocType ?? koc.tier,
-  productCategoryId: koc.productCategory || undefined,
+  // `kocType` = ngành hàng; tier chỉ là giá trị suy ra từ follower, không gửi lên BE.
+  kocType: koc.kocType || koc.productCategory || undefined,
   status: koc.status,
 });

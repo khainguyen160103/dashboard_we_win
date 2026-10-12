@@ -27,11 +27,14 @@ export const authStore = create<AuthStore>()((set, get) => ({
     return set({ user, isAuthenticated: !!user });
   },
   setUser: (user) => set({ user, isAuthenticated: !!user }),
-  clearAuth: () =>
+  clearAuth: () => {
+    // Xoá quyền menu đã cache để tài khoản sau không thừa hưởng
+    localStorageUtils.removeItem(keyStore.PERMISSIONS);
     set({
       user: null,
       isAuthenticated: false,
-    }),
+    });
+  },
   setIsAuthenticated: (value: boolean) => set({ isAuthenticated: value }),
   can: (resource: string, action: string) => {
     return get().user?.permissions?.includes(`${resource}:${action}`);

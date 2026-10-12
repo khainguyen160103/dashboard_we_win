@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import campaignKocService from "../../services/campaignKoc.service";
-import type { InviteKocPayload, UpdateCampaignKocPayload } from "../../model/CampaignKoc";
-import type { KocListParams } from "../../model/Koc";
-import { queryKeys } from "./queryKeys";
+import campaignKocService from "../service/campaignKoc.service";
+import type { InviteKocPayload, UpdateCampaignKocPayload } from "../model/CampaignKoc";
+import type { KocListParams } from "../../koc/model/Koc";
+import { queryKeys } from "../../../hooks/query/queryKeys";
+import { inviteFormKeys } from "./useInviteFormQuery";
 
 /** KOC đã mời / tham gia của một chiến dịch. */
 export const useCampaignKocsQuery = (campaignId?: string, options?: { enabled?: boolean }) =>
@@ -43,6 +44,8 @@ export const useUpdateCampaignKocMutation = (campaignId: string) => {
       campaignKocService.update(campaignId, kocUserId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.campaignKocs.forCampaign(campaignId) });
+      // cột Trạng thái ở tab "Form mời"
+      void queryClient.invalidateQueries({ queryKey: inviteFormKeys.submissions(campaignId) });
     },
   });
 };

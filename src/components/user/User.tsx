@@ -3,7 +3,7 @@ import {useState} from 'react'
 import { useUser } from '../../hooks/useUser';
 import { UserTable } from './UserTable';
 import { User } from '../../model/User';
-import { UserModal, UserFormValues } from './UserModal';
+import { UserModal, type updateUserRequest } from './UserModal';
 
 export default function UserTab() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,19 +21,22 @@ export default function UserTab() {
 
   const handleOpenEdit = (record: User) => {
     setEditingUser(record);
+    console.log("Editing user:", record);
     setModalOpen(true);
   };
 
   const handleClose = () => {
-    setModalOpen(false);
+    console.log("onclose called");
     setEditingUser(null);
+    setModalOpen(false);
+    console.log("edit user after close:", editingUser);
   };
   const handleUpdateStatus = (userId: string, status: string) => {
     const payload = status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
     updateUser.mutate({ id: userId, payload: { status: payload } });
   };
   
-  const handleSubmit = async (values: UserFormValues) => {
+  const handleSubmit = async (values: updateUserRequest) => {
     const selectedRoleId = values.role; // Role UUID string
     const formattedStatus = values.status?.toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE";
 

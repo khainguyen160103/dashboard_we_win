@@ -1,13 +1,15 @@
-import { Button, Checkbox, DatePicker, Input, InputNumber, Modal, Select, Switch, Tooltip, Upload } from 'antd'
-import { InfoCircleOutlined, UploadOutlined } from '@ant-design/icons'
+import { Checkbox, DatePicker, Input, InputNumber, Modal, Select, Tooltip } from 'antd'
+import { InfoCircleOutlined } from '@ant-design/icons'
 import dayjs, { type Dayjs } from 'dayjs'
 import type { UploadFile } from 'antd'
 import type { ReactNode } from 'react'
 import { Controller, useForm, type DefaultValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { INDUSTRY_OPTIONS } from '../brand/types'
-import { initialMockBrands } from '../brand/brand.data'
+import type { CampaignRequest } from '../model/Campaign'
+import { useProductCategoriesQuery } from '../hook/useProductCategoryQuery'
+import { useBrandsQuery } from '../../../hooks/query/useBrandQuery'
+import { useStaffOptions } from '../hook/useOpsStaffQuery'
 
 const { TextArea } = Input
 
@@ -19,7 +21,7 @@ const campaignSchema = z
     name: z.string().trim().min(1, { error: 'Vui lòng nhập tên chiến dịch' }).max(200),
     type: z.string({ error: 'Chọn loại chiến dịch' }),
     brandId: z.string({ error: 'Chọn nhãn hàng' }),
-    industry: z.string({ error: 'Chọn ngành hàng' }),
+    productCategoryId: z.string({ error: 'Chọn ngành hàng' }),
     status: z.string(),
     description: z.string().trim().max(1000).optional(),
     startDate: dateSchema.nullable().refine((v) => v !== null, { error: 'Chọn ngày bắt đầu' }),
@@ -30,7 +32,7 @@ const campaignSchema = z
     tapAdsCommission: percentSchema,
     targetKocCount: z.number().int().min(0).optional(),
     kocTier: z.string(),
-    castType: z.enum(['paid', 'free']),
+    castType: z.enum(['PAID', 'FREE']),
     castFeePerKoc: z.number().min(0).optional(),
     videosPerKoc: z.number().int().min(0).optional(),
     contentDeadline: dateSchema.nullable().optional(),
@@ -44,7 +46,7 @@ const campaignSchema = z
     if (data.startDate && data.endDate && data.endDate.isBefore(data.startDate, 'day')) {
       ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'Ngày kết thúc phải sau ngày bắt đầu' })
     }
-    if (data.castType === 'paid' && data.castFeePerKoc === undefined) {
+    if (data.castType === 'PAID' && data.castFeePerKoc === undefined) {
       ctx.addIssue({ code: 'custom', path: ['castFeePerKoc'], message: 'Nhập phí Cast' })
     }
   })
@@ -52,10 +54,40 @@ const campaignSchema = z
 type CampaignFormInput = z.input<typeof campaignSchema>
 export type CampaignFormValues = z.output<typeof campaignSchema>
 
+/** Form -> body `POST /api/campaigns` (file brief chưa có API upload nên chưa gửi). */
+export const toCampaignRequest = (v: CampaignFormValues): CampaignRequest => ({
+  name: v.name.trim(),
+  type: v.type,
+  status: v.status,
+  description: v.description || undefined,
+  productCategoryId: v.productCategoryId,
+  brandId: v.brandId,
+  startTime: v.startDate?.startOf('day').toISOString(),
+  endTime: v.endDate?.endOf('day').toISOString(),
+  targetTotalKoc: v.targetKocCount,
+  tierKocRequire: v.kocTier && v.kocTier !== 'any' ? v.kocTier : undefined,
+  pmId: v.pmId,
+  acId: v.accountId,
+  commission: [
+    { typeCommission: 'KOC' as const, fromNormal: v.kocOrganicCommission, fromAdv: v.kocAdsCommission },
+    { typeCommission: 'TAP' as const, fromNormal: v.tapOrganicCommission, fromAdv: v.tapAdsCommission },
+  ].filter((c) => c.fromNormal !== undefined || c.fromAdv !== undefined),
+  castMemberRequest: {
+    typeCast: v.castType === 'PAID' ? 'CAST' : 'NONE',
+    totalCast: v.castType === 'PAID' ? v.castFeePerKoc : undefined,
+    totalVideo: v.videosPerKoc,
+    deadlineTime: v.contentDeadline?.endOf('day').toISOString(),
+  },
+  requireContentApproval: v.requireContentApproval,
+  operatorIds: v.operatorIds,
+})
+
 type Props = {
   open: boolean
   onClose: () => void
-  onSubmit?: (values: CampaignFormValues) => void
+  /** Trả Promise: modal chỉ đóng khi tạo thành công. */
+  onSubmit?: (values: CampaignFormValues) => Promise<unknown> | void
+  submitting?: boolean
 }
 
 const CAMPAIGN_TYPE_OPTIONS = [
@@ -84,22 +116,15 @@ const CAST_OPTIONS = [
   { value: 'FREE', label: 'Không trả phí Cast' },
 ]
 
-// TODO: thay bằng dữ liệu nhân sự từ API
-const STAFF_OPTIONS = [
-  { value: 'u1', label: 'Nguyễn Văn A' },
-  { value: 'u2', label: 'Trần Thị B' },
-  { value: 'u3', label: 'Lê Văn C' },
-]
-
 const DEFAULT_VALUES: DefaultValues<CampaignFormInput> = {
   name: '',
-  type: 'tap',
-  status: 'draft',
+  type: 'OPTIMIZE',
+  status: 'DRAFT',
   description: '',
   startDate: null,
   endDate: null,
   kocTier: 'any',
-  castType: 'paid',
+  castType: 'PAID',
   contentDeadline: null,
   requireContentApproval: false,
   guidelineFiles: [],
@@ -148,7 +173,13 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
   </div>
 )
 
-export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
+export const AddCampaignModal = ({ open, onClose, onSubmit, submitting }: Props) => {
+  const brandsQ = useBrandsQuery({ size: 200 })
+  const categoriesQ = useProductCategoriesQuery()
+  // Nhân sự thật theo role (GET /api/users)
+  const pmStaff = useStaffOptions('PM')
+  const accountStaff = useStaffOptions('SA')
+  const opsStaff = useStaffOptions('OP')
   const {
     control,
     handleSubmit,
@@ -165,9 +196,13 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
     onClose()
   }
 
-  const onSubmitForm = (data: CampaignFormValues) => {
-    onSubmit?.(data)
-    handleClose()
+  const onSubmitForm = async (data: CampaignFormValues) => {
+    try {
+      await onSubmit?.(data)
+      handleClose()
+    } catch {
+      // lỗi đã được báo ở nơi gọi — giữ modal mở để sửa
+    }
   }
 
   return (
@@ -177,6 +212,7 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
       onOk={handleSubmit(onSubmitForm)}
       onCancel={handleClose}
       okText="Tạo chiến dịch"
+      confirmLoading={submitting}
       cancelText="Hủy"
       width={760}
     >
@@ -216,7 +252,8 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
                     {...field} status={fieldState.error && 'error'}
                     showSearch={{ optionFilterProp: 'label' }}
                     placeholder="Chọn nhãn hàng…"
-                    options={initialMockBrands.map((b) => ({ value: b.id, label: b.name }))}
+                    loading={brandsQ.isLoading}
+                    options={(brandsQ.data ?? []).map((b) => ({ value: String(b.id), label: b.name }))}
                   />
                 </Field>
               )}
@@ -225,14 +262,16 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
 
           <div style={grid2}>
             <Controller
-              name="industry"
+              name="productCategoryId"
               control={control}
               render={({ field, fieldState }) => (
                 <Field label="Chủ đề / Ngành hàng" required error={fieldState.error?.message}>
                   <Select
                     {...field} status={fieldState.error && 'error'}
                     placeholder="Chọn ngành hàng…"
-                    options={INDUSTRY_OPTIONS.map((i) => ({ value: i, label: i }))}
+                    showSearch={{ optionFilterProp: 'label' }}
+                    loading={categoriesQ.isLoading}
+                    options={(categoriesQ.data ?? []).map((c) => ({ value: String(c.id), label: c.name }))}
                   />
                 </Field>
               )}
@@ -400,13 +439,13 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
                 <Field
                   error={fieldState.error?.message}
                   label="Phí Cast / KOC (₫)"
-                  required={castType === 'paid'}
+                  required={castType === 'PAID'}
                 >
                   <InputNumber
                     {...field} status={fieldState.error && 'error'}
                     onChange={(v) => field.onChange(toOptionalNumber(v))}
                     min={0}
-                    disabled={castType !== 'paid'}
+                    disabled={castType !== 'PAID'}
                     placeholder="VD: 3,000,000"
                     formatter={moneyFormatter}
                     parser={moneyParser}
@@ -445,7 +484,7 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
             />
           </div>
 
-          <Controller
+          {/* <Controller
             name="requireContentApproval"
             control={control}
             render={({ field: { value, onChange, ...rest } }) => (
@@ -453,9 +492,9 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
                 <Switch {...rest} checked={value} onChange={onChange} />
               </Field>
             )}
-          />
+          /> */}
 
-          <Controller
+          {/* <Controller
             name="guidelineFiles"
             control={control}
             render={({ field: { value, onChange } }) => (
@@ -470,7 +509,7 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
                 </Upload>
               </Field>
             )}
-          />
+          /> */}
         </Section>
 
         <Section title="Phụ trách chiến dịch">
@@ -480,7 +519,7 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
               control={control}
               render={({ field, fieldState }) => (
                 <Field label="PM" tooltip="Project Manager chịu trách nhiệm chính" error={fieldState.error?.message}>
-                  <Select {...field} status={fieldState.error && 'error'} placeholder="Chọn PM…" options={STAFF_OPTIONS} />
+                  <Select {...field} status={fieldState.error && 'error'} placeholder="Chọn PM…" loading={pmStaff.isLoading} options={pmStaff.options} notFoundContent="Chưa có tài khoản role PM" />
                 </Field>
               )}
             />
@@ -489,7 +528,7 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
               control={control}
               render={({ field, fieldState }) => (
                 <Field label="Account" tooltip="Người làm việc trực tiếp với nhãn hàng" error={fieldState.error?.message}>
-                  <Select {...field} status={fieldState.error && 'error'} placeholder="Chọn Account…" options={STAFF_OPTIONS} />
+                  <Select {...field} status={fieldState.error && 'error'} placeholder="Chọn Account…" loading={accountStaff.isLoading} options={accountStaff.options} notFoundContent="Chưa có tài khoản role SaleAccount" />
                 </Field>
               )}
             />
@@ -504,7 +543,9 @@ export const AddCampaignModal = ({ open, onClose, onSubmit }: Props) => {
                   status={fieldState.error && 'error'}
                   mode="multiple"
                   placeholder="Chọn nhân viên vận hành…"
-                  options={STAFF_OPTIONS}
+                  loading={opsStaff.isLoading}
+                  options={opsStaff.options}
+                  notFoundContent="Chưa có tài khoản role Operation"
                   menuItemSelectedIcon={null}
                   optionRender={(option) => (
                     <Checkbox className="pointer-events-none" checked={field.value?.includes(option.value as string)}>{option.label}</Checkbox>

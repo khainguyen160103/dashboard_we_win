@@ -30,7 +30,7 @@ export const useAuth = () => {
         
         setAuth({ user: me.data });
         message.success(data?.message ?? "Đăng nhập thành công");
-        navigate("/dashboard");
+        navigate("/");
       } catch (error: any) {
         localStorageUtils.removeItem(keyStore.ACCESS_TOKEN);
         localStorageUtils.removeItem(keyStore.REFRESH_TOKEN);

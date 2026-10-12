@@ -46,6 +46,27 @@ export type CampaignRequest = {
   endTime?: string;
   targetTotalKoc?: number;
   tierKocRequire?: string;
+  /** UUID ngành hàng (`/api/product-categories`). */
+  productCategoryId?: string;
+  /** UUID nhãn hàng (= users.id của tài khoản Brand) — BE gắn qua user_campaign. */
+  brandId?: string;
+  /** users.id của PM phụ trách. */
+  pmId?: string;
+  /** users.id của Account (Sale Account). */
+  acId?: string;
+  /** Hoa hồng cấp chiến dịch — typeCommission: KOC | TAP; fromNormal = organic %, fromAdv = ads %. */
+  commission?: { typeCommission: "KOC" | "TAP"; fromNormal?: number; fromAdv?: number }[];
+  /** Cast / số video / deadline nội dung (cấp chiến dịch). typeCast: CAST = trả phí, NONE = không. */
+  castMemberRequest?: {
+    typeCast: "CAST" | "NONE";
+    totalCast?: number;
+    totalVideo?: number;
+    deadlineTime?: string;
+    description?: string;
+  };
+  requireContentApproval?: boolean;
+  /** users.id của NV Vận hành (role OP). */
+  operatorIds?: string[];
 };
 
 

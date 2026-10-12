@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Form, Input, InputNumber, Modal, Typography } from "antd";
-import type { CampaignKOC } from "./types";
+import type { CampaignKOC } from "../model/types";
 
 interface DealPriceModalProps {
   open: boolean;

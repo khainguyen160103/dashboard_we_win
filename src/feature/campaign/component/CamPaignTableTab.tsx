@@ -5,11 +5,11 @@ import {
     useCampaigns,
     useCreateCampaignMutation,
     useUpdateCampaignMutation,
-} from '../../hooks/query/useCampaignQuery';
-import type { CampaignPayload } from '../../services/campaign.service';
+} from '../hook/useCampaignQuery';
+import type { CampaignPayload } from '../service/campaign.service';
 import { CampaignTable } from './CampaignTable';
 import { CampaignFormModal } from './CampaignFormModal';
-import type { Campaign, CampaignFormValues } from './types';
+import type { Campaign, CampaignFormValues } from '../model/types';
 
 const STATUS_OPTIONS = [
     { value: "", label: "Tất cả trạng thái" },

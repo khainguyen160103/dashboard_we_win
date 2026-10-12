@@ -1,4 +1,4 @@
-import type { CampaignStatus, KOCPipelineStatus } from "./types";
+import type { CampaignStatus, KOCPipelineStatus } from "../model/types";
 
 // ─── Campaign status colors ──────────────────────────────────────────────────
 export const getCampaignStatusColor = (status: CampaignStatus): string => {

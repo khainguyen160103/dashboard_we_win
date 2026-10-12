@@ -1,6 +1,6 @@
 import { Descriptions, Modal, Skeleton, Tag, Typography } from "antd";
-import { useKocQuery } from "../../hooks/query/useKocQuery";
-import { formatVND } from "./campaign.utils";
+import { useKocQuery } from "../../../hooks/query/useKocQuery";
+import { formatVND } from "../utils/campaign.utils";
 
 interface KocInfoModalProps {
   open: boolean;

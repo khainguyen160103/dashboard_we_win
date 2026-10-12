@@ -24,6 +24,15 @@ export const refreshApi = axios.create({
   },
 });
 
+/** Cho trang public (form mời KOC): không gắn token, không refresh — tránh 401 do token cũ hết hạn. */
+export const publicApi = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 const { setAuth } = authStore.getState();
 // ── Request: gắn access token ──────────────────────────────────────────────
 api.interceptors.request.use(
