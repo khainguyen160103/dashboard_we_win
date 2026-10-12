@@ -13,6 +13,7 @@ import {
 import { useSidebar } from "../context/SidebarContext";
 import { localStorageUtils } from "../utils/localStorageUtils";
 import { keyStore } from "../enums/keyStore";
+import { usePermission } from "../context/PermissionContext";
 
 type NavItem = {
   name: string;
@@ -21,39 +22,39 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 const allNavItems: NavItem[] = [
-    {
-      icon: <GridIcon />,
-      name: "Dashboard",
-      path: "/dashboard",
+  {
+    icon: <GridIcon />,
+    name: "Dashboard",
+    path: "/dashboard",
 
-    },
-    {
-      icon: <UserCircleIcon />,
-      name: "Quản lý KOC",
-      path: "/koc",
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Quản lý KOC",
+    path: "/koc",
 
-    },
-    {
-      icon: <UserCircleIcon />,
-      name: "Quản lý Brand",
-      path: "/brand",
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Quản lý Brand",
+    path: "/brand",
 
-    },
+  },
   {
     icon: <BoxCubeIcon />,
     name: "Vận hành chiến dịch",
-    path: "/campaigns",
+    path: "/campaign",
 
   },
 
-    {
-      icon: <UserCircleIcon />,
-      name: "Quản lý User",
-      path: "/permissions",
+  {
+    icon: <UserCircleIcon />,
+    name: "Quản lý User",
+    path: "/permission",
 
-    },
+  },
 
-  ];
+];
 
 const AppSidebar: React.FC = () => {
 
@@ -66,8 +67,10 @@ const AppSidebar: React.FC = () => {
   const allPaths = allNavItems.filter((item) => item.path);
 
 
+  // Đọc `loading` để sidebar render lại khi PermissionProvider tải xong quyền vào localStorage.
+  usePermission();
   const permissions = localStorageUtils.getItem(keyStore.PERMISSIONS)
-  const allowedPaths = Object.keys(permissions) ?? [];
+  const allowedPaths = Object.keys(permissions ?? {});
   console.log(allowedPaths)
 
   const itemNavbar = allPaths.filter((path) => allowedPaths.includes(path.path));
@@ -285,7 +288,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(itemNavbar, "main")} 
+              {renderMenuItems(itemNavbar, "main")}
             </div>
           </div>
         </nav>

@@ -1,23 +1,23 @@
-import { Flex, Spin } from 'antd'
-import { useCampaigns } from '../../hooks/query/useCampaignQuery'
+import { Alert, Flex, Spin } from 'antd'
 import { CardCampaign } from './CardCampaign'
 import { CampaignWarning } from './CampaignWarning'
 import { CampaignTable } from './CampaignTable'
-import { useCampaign } from '../../hooks/useCampaign'
+import { useCampaignOverview } from '../hook/useCampaignQuery'
 
 export default function CampaignOverview() {
-    const { overview } = useCampaign
-    const { data, isLoading } = overview()
-    console.log(data)
-    const campaigns = data.data ?? [];
-    const totalCampaignsActive = campaigns.filter((c) => c.status === 'ACTIVE').length;
+    const { data, isLoading, isError, error } = useCampaignOverview()
+    const campaigns = data ?? [];
+    const totalCampaignsActive = campaigns?.filter((c) => c.status === 'ACTIVE').length;
 
   return (
     <Spin spinning={isLoading}>
+          {isError && (
+              <Alert type="error" showIcon className="mb-4" title="Không tải được tổng quan chiến dịch" description={error?.message} />
+          )}
           <Flex gap={16} wrap="wrap" style={{ marginBottom: 24 }}>
               <CardCampaign
                   title="Tổng chiến dịch"
-                  value={data?.totalElements || 0}
+                  value={campaigns.length}
                   description='Toàn bộ chiến dịch trong hệ thống demo — bấm "Xem thêm" cuối bảng để xem hết'
               />
               <CardCampaign

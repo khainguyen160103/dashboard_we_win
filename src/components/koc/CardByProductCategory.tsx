@@ -27,23 +27,12 @@ const compactVND = (v: number) => {
     return v.toLocaleString('vi-VN');
 };
 
-// Dữ liệu mẫu để component render độc lập khi không truyền prop
-const SAMPLE: Koc[] = [
-    { productCategory: 'Mỹ phẩm & Chăm sóc da', gmv: 8_780_000_000 },
-    { productCategory: 'Thiết bị điện tử & Công nghệ', gmv: 8_290_000_000 },
-    { productCategory: 'Quần áo & Phụ kiện thời trang', gmv: 4_910_000_000 },
-    { productCategory: 'Đồ dùng mẹ & bé', gmv: 4_300_000_000 },
-    { productCategory: 'Thực phẩm & Đồ uống', gmv: 1_650_000_000 },
-    { productCategory: 'Dụng cụ thể thao & Gym', gmv: 3_990_000_000 },
-    { productCategory: 'Đồ gia dụng & Nội thất', gmv: 1_080_000_000 },
-] as Koc[];
-
 interface Props {
     kocs?: Koc[];
 }
 
 export default function CardByProductCategory({ kocs }: Props) {
-    const rows = kocs && kocs.length > 0 ? kocs : SAMPLE;
+    const rows = kocs ?? [];
 
     // Gom tổng GMV theo danh mục sản phẩm
     const totals = new Map<string, number>();

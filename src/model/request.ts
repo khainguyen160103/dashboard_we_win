@@ -15,4 +15,5 @@ export type ApiResponsePage<T> = {
   totalElements: number;
   totalPages: number;
   last: boolean;
+  timestamp: string;
 };

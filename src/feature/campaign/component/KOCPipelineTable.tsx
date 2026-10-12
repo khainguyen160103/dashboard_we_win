@@ -16,10 +16,10 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
-import type { CampaignKOC, KOCPipelineStatus } from "./types";
-import { PIPELINE_LABELS } from "./types";
-import { getPipelineStatusColor, formatVND } from "./campaign.utils";
-import { getPlatformIcon, getTierColor } from "../koc/koc.utils";
+import type { CampaignKOC, KOCPipelineStatus } from "../model/types";
+import { PIPELINE_LABELS } from "../model/types";
+import { getPipelineStatusColor, formatVND } from "../utils/campaign.utils";
+import { getPlatformIcon, getTierColor } from "../../../components/koc/koc.utils";
 
 interface KOCPipelineTableProps {
   kocs: CampaignKOC[];

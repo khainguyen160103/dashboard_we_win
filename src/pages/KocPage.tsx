@@ -4,9 +4,7 @@ import { Spin } from "antd";
 
 import KocTable from "../components/tables/KocTable";
 import { TemplateManagerModal } from "../components/koc/TemplateManagerModal";
-import { KOCHistoryModal } from "../components/koc/KOCHistoryModal";
 
-import type { KOCRecord } from "../components/koc/types";
 
 
 import CardChartByFollower from "../components/koc/CardChartByFollower";
@@ -18,11 +16,9 @@ import KocHeaderMetrics from "../components/koc/KocHeaderMetrics";
 import { useKoc } from "../hooks/query";
 
 
-export default function KOCManagement() {
+export default function KocPage() {
 
 
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [selectedHistoryKOC, setSelectedHistoryKOC] = useState<KOCRecord | null>(null);
 
   const [templateManagerOpen, setTemplateManagerOpen] = useState(false);
   const { data: kocs, isLoading, isError } = useKoc()
@@ -57,12 +53,6 @@ export default function KOCManagement() {
             <KocTable />
 
             {/* Modals */}
-
-            <KOCHistoryModal
-              open={historyModalOpen}
-              koc={selectedHistoryKOC}
-              onClose={() => { setHistoryModalOpen(false); setSelectedHistoryKOC(null); }}
-            />
 
             <TemplateManagerModal open={templateManagerOpen} onClose={() => setTemplateManagerOpen(false)} />
           </>}

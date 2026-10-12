@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { PermissionPayload } from "../../model/Permission";
+import type { Permission, PermissionPayload } from "../../model/Permission";
 import permissionService from "../../services/permission.service";
 import { queryKeys } from "./queryKeys";
 
@@ -26,6 +26,25 @@ export const permissionQuery = {
       queryFn: () => permissionService.get(id),
       enabled,
     }),
+  saveByRole: () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+      mutationFn: ({
+        roleId,
+        permissions,
+      }: {
+        roleId: string;
+        permissions: Permission[];
+      }) => permissionService.saveByRole(roleId, permissions),
+      onSuccess: (_data, { roleId }) => {
+        void queryClient.invalidateQueries({ queryKey: ["item", roleId] });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.permissions.lists(),
+        });
+      },
+    });
+  },
   create: () => {
     const queryClient = useQueryClient();
 

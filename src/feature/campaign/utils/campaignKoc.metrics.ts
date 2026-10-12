@@ -1,5 +1,5 @@
-import type { CampaignKocDto } from "../../model/CampaignKoc";
-import { PARTICIPATING_STATUSES } from "../../model/CampaignKoc";
+import type { CampaignKocDto } from "../model/CampaignKoc";
+import { PARTICIPATING_STATUSES } from "../model/CampaignKoc";
 
 // ─── Derived KPIs for the "Danh sách mời KOC" views ──────────────────────────
 export type CampaignKocStats = {

@@ -5,7 +5,7 @@ import type { ApiResponse, ApiResponsePage } from "../model/request";
 
 
 export const userService = {
-  list: async (params?: { page?: number; limit?: number; q?: string }): Promise<User[]> => {
+  list: async (params?: { page?: number; limit?: number; size?: number; q?: string }): Promise<User[]> => {
     const response = await axiosClient.get<ApiResponsePage<User>>("/users", {
       params,
     });

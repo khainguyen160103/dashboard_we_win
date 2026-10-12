@@ -4,6 +4,7 @@ import type {
   PermissionMap,
   PermissionPayload,
 } from "../model/Permission";
+import { ApiResponse, ApiResponsePage } from "../model/request";
 
 export const permissionService = {
   list: async (params?: {
@@ -11,39 +12,56 @@ export const permissionService = {
     limit?: number;
     q?: string;
   }): Promise<Permission[]> => {
-    const { data } = await axiosClient.get<any>("/permissions", { params });
-    // Support unwrapping Spring Page / ApiResponse wrapper
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data?.data?.content && Array.isArray(data.data.content)) {
-      return data.data.content;
-    }
-    if (data?.content && Array.isArray(data.content)) {
-      return data.content;
-    }
-    if (data?.data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    return [];
+    const { data } = await axiosClient.get<ApiResponsePage<Permission>>(
+      "/permissions",
+      {
+        params,
+      },
+    );
+    return data?.data;
   },
 
   get: async (id: string | number): Promise<Permission> => {
-    const { data } = await axiosClient.get<any>(`/permissions/${id}`);
+    const { data } = await axiosClient.get<ApiResponse<Permission>>(
+      `/permissions/${id}`,
+    );
     return data?.data ?? data;
+  },
+
+  /** Quyền (menu) của chính user đang đăng nhập — mọi role đều gọi được. */
+  getMyPermissions: async (): Promise<PermissionMap> => {
+    const { data } = await axiosClient.get<ApiResponse<PermissionMap>>("/permissions/me");
+    return data?.data ?? {};
   },
 
   getUserPermissions: async (id: string | number): Promise<PermissionMap> => {
-    const { data } = await axiosClient.get<any>(`/permissions/user/${id}`);
+    const { data } = await axiosClient.get<ApiResponse<PermissionMap>>(
+      `/permissions/user/${id}`,
+    );
     return data?.data ?? data;
   },
 
-  getPermissionsByRoleId: async (id: string) => {
-    const { data } = await axiosClient.get(`/permissions/role/${id}`);
+  getPermissionsByRoleId: async (id: string): Promise<Permission[]> => {
+    const { data } = await axiosClient.get<ApiResponse<Permission[]>>(
+      `/permissions/role/${id}`,
+    );
+    return data?.data;
+  },
+  saveByRole: async (
+    roleId: string,
+    permissions: Permission[],
+  ): Promise<Permission[]> => {
+    const { data } = await axiosClient.post<ApiResponse<Permission[]>>(
+      `/permissions/role/${roleId}`,
+      permissions,
+    );
     return data?.data;
   },
   create: async (payload: PermissionPayload): Promise<Permission> => {
-    const { data } = await axiosClient.post<any>("/permissions", payload);
+    const { data } = await axiosClient.post<ApiResponse<Permission>>(
+      "/permissions",
+      payload,
+    );
     return data?.data ?? data;
   },
 
@@ -51,7 +69,10 @@ export const permissionService = {
     id: string | number,
     payload: Partial<PermissionPayload>,
   ): Promise<Permission> => {
-    const { data } = await axiosClient.put<any>(`/permissions/${id}`, payload);
+    const { data } = await axiosClient.put<ApiResponse<Permission>>(
+      `/permissions/${id}`,
+      payload,
+    );
     return data?.data ?? data;
   },
 

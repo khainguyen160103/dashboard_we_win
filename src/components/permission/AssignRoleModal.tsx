@@ -1,9 +1,3 @@
-/**
- * AssignRoleModal
- *
- * Modal để phân quyền cho một người dùng cụ thể
- * Cho phép chọn nhiều Role bằng checkbox
- */
 
 import { useState, useEffect } from "react";
 import { Avatar, Checkbox, Divider, Modal, Space, Tag } from "antd";

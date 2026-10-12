@@ -10,22 +10,12 @@ const NOT_JOINED_STATUS = 'Tiềm năng';
 
 const fmtNumber = (v?: number) => (v || 0).toLocaleString('vi-VN');
 
-// Dữ liệu mẫu để component render độc lập khi không truyền prop
-const SAMPLE: Koc[] = [
-    { name: 'Lê Thảo Nhi', idTiktok: '@thaonhi.fashion', kocType: 'Thời trang', productCategory: 'Quần áo & Phụ kiện thời trang', tier: 'Micro', status: 'Tiềm năng', followers: 128_000 },
-    { name: 'Ngô Đức Thắng', idTiktok: '@thangngo.gadget', kocType: 'Công nghệ', productCategory: 'Phụ kiện điện thoại & Máy tính', tier: 'Micro', status: 'Tiềm năng', followers: 98_000 },
-    { name: 'Trịnh Thùy Dương', idTiktok: '@thuyduong.beauty', kocType: 'Làm đẹp', productCategory: 'Mỹ phẩm trang điểm', tier: 'Nano', status: 'Tiềm năng', followers: 38_000 },
-    { name: 'Đinh Phương Thảo', idTiktok: '@phuongthao.health', kocType: 'Sức khỏe', productCategory: 'Thực phẩm chức năng', tier: 'Micro', status: 'Tiềm năng', followers: 156_000 },
-    { name: 'Châu Gia Hân', idTiktok: '@giahan.fashion', kocType: 'Thời trang', productCategory: 'Quần áo & Phụ kiện thời trang', tier: 'Micro', status: 'Tiềm năng', followers: 121_000 },
-    { name: 'Trần Văn Minh', idTiktok: '@minhtran.tech', kocType: 'Công nghệ', productCategory: 'Thiết bị điện tử & Công nghệ', tier: 'Macro', status: 'Đang hợp tác', followers: 620_000 },
-] as Koc[];
-
 type Props = {
     kocs?: Koc[];
 };
 
 export default function CardKocNotJoin({ kocs }: Props) {
-    const rows = kocs && kocs.length > 0 ? kocs : SAMPLE;
+    const rows = kocs ?? [];
 
     const notJoined = useMemo(
         () =>

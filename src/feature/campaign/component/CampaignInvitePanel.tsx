@@ -22,14 +22,13 @@ import {
   useCampaignKocsQuery,
   useInviteKocsMutation,
   useRemoveCampaignKocMutation,
-} from "../../hooks/query/useCampaignKocQuery";
+} from "../hook/useCampaignKocQuery";
 import {
   CAMPAIGN_KOC_STATUS_LABEL,
   type CampaignKocDto,
   type CampaignKocStatus,
-} from "../../model/CampaignKoc";
-import { formatDate } from "../../utils/formatDate";
-import { MOCK_CAMPAIGN_KOCS, withFallback } from "../../pages/Dashboard/mockData";
+} from "../model/CampaignKoc";
+import { formatDate } from "../../../utils/formatDate";
 
 const { Title, Text } = Typography;
 
@@ -37,6 +36,7 @@ const { Title, Text } = Typography;
 type Stage = "waiting" | "dealing" | "confirmed" | "declined";
 
 const STAGE_OF: Record<CampaignKocStatus, Stage> = {
+  PENDING_INVITE: "waiting",
   INVITED: "waiting",
   REGISTERED: "waiting",
   WEWIN_REVIEW: "dealing",
@@ -98,10 +98,7 @@ export function CampaignInvitePanel({
   const [progressKoc, setProgressKoc] = useState<CampaignKocDto | null>(null);
   const [fullOpen, setFullOpen] = useState(false);
 
-  const { rows, usingMock } = useMemo(
-    () => withFallback<CampaignKocDto>(query, MOCK_CAMPAIGN_KOCS),
-    [query.data, query.isError, query.isLoading],
-  );
+  const rows = useMemo<CampaignKocDto[]>(() => query.data ?? [], [query.data]);
 
   const stats = useMemo(() => {
     const by = (s: Stage) => rows.filter((r) => stageOf(r) === s).length;
@@ -163,19 +160,14 @@ export function CampaignInvitePanel({
   return (
     <Card className="rounded-2xl border border-gray-100 shadow-sm">
       <Title level={5} className="!mb-0">
-        Danh sách mời KOC{" "}
-        {usingMock && (
-          <Tag color="gold" className="align-middle text-xs">
-            Dữ liệu minh hoạ
-          </Tag>
-        )}
+        Danh sách mời KOC
       </Title>
       <Text type="secondary" className="text-xs">
         Theo dõi tiến độ mời từng KOC như một CRM — từ lúc gửi lời mời đến khi xác nhận tham
         gia. Bấm "Chi tiết" để xem đầy đủ mốc liên hệ.
       </Text>
 
-      {isError && !usingMock ? (
+      {isError ? (
         <Empty className="py-10" description="Không tải được danh sách mời KOC" />
       ) : (
         <Spin spinning={isLoading}>

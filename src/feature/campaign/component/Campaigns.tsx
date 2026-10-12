@@ -1,9 +1,11 @@
-import { Button, Tabs, TabsProps } from "antd";
+import { Button, Tabs, TabsProps, message } from "antd";
 import CampaignOverview from "./CampaignOverview";
 
-import { useModal } from "../../hooks/useModal";
-import { AddCampaignModal } from "./AddCampaignModal";
+import { useModal } from "../../../hooks/useModal";
+import { AddCampaignModal, toCampaignRequest, type CampaignFormValues } from "./AddCampaignModal";
 import { CampaignList } from "./CampaignList";
+import { useCreateCampaignMutation } from "../hook/useCampaignQuery";
+import { authStore } from "../../../store/authStore";
 
 const items: TabsProps['items'] = [
     {
@@ -20,13 +22,34 @@ const items: TabsProps['items'] = [
 
 export const Campaigns = () => {
     const {isOpen , closeModal , openModal} = useModal()
+    const createMut = useCreateCampaignMutation()
+    // BE chỉ cho Admin / PM tạo chiến dịch
+    const canCreate = authStore((s) => s.user?.isAdmin || s.user?.admin || s.hasRole(["ADMIN", "PM"]))
+
+    const handleCreate = async (values: CampaignFormValues) => {
+        try {
+            await createMut.mutateAsync(toCampaignRequest(values))
+            message.success("Tạo chiến dịch thành công")
+        } catch (err: any) {
+            message.error(err?.response?.data?.message ?? "Không tạo được chiến dịch")
+            throw err
+        }
+    }
+
   return (
     <>
           <div className="bg-white rounded-2xl p-4 shadow-2xl">
-              <Button onClick={openModal} type="primary" className="mb-2" > Tạo chiến dịch </Button>
+              {canCreate && (
+                  <Button onClick={openModal} type="primary" className="mb-2" > Tạo chiến dịch </Button>
+              )}
               <Tabs items={items} />
           </div>
-          <AddCampaignModal open={isOpen} onClose={closeModal}/>
+          <AddCampaignModal
+              open={isOpen}
+              onClose={closeModal}
+              onSubmit={handleCreate}
+              submitting={createMut.isPending}
+          />
     </>
   )
 }

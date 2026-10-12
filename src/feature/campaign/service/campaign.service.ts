@@ -1,6 +1,5 @@
-import { api as axiosClient } from "../api/request";
+import { api as axiosClient } from "../../../api/request";
 import type { Campaign, CampaignRequest } from "../model/Campaign";
-import { ApiResponsePage } from "../model/request";
 
 export type CampaignPayload = CampaignRequest;
 
@@ -16,11 +15,14 @@ export type CampaignPage = {
 const unwrapPage = (data: unknown): CampaignPage => {
   const d = data as any;
   const page = d?.data ?? d;
+  // BE có thể trả: mảng trần | { content: [...] } | { data: [...] } (giống /kocs)
   const content: Campaign[] = Array.isArray(page)
     ? page
     : Array.isArray(page?.content)
       ? page.content
-      : [];
+      : Array.isArray(page?.data)
+        ? page.data
+        : [];
   return {
     content,
     page: page?.page ?? 0,
@@ -39,12 +41,19 @@ const unwrapOne = (data: unknown): Campaign => {
 export const campaignService = {
   list: async (params?: {
     page?: number;
+    /** Alias của `size` — BE chỉ nhận `size` (mặc định 20). */
     limit?: number;
+    size?: number;
     name?: string;
     status?: string;
+    /** true = chỉ chiến dịch của user đang đăng nhập (Brand/KOC được gắn vào chiến dịch). */
+    mine?: boolean;
+    /** Chiến dịch mà user (Brand/KOC) này được gắn vào. */
+    memberUserId?: string;
   }): Promise<CampaignPage> => {
+    const { limit, ...rest } = params ?? {};
     const response = await axiosClient.get<unknown>("/campaigns", {
-      params,
+      params: { ...rest, size: rest.size ?? limit },
     });
     return unwrapPage(response.data);
   },
@@ -73,11 +82,9 @@ export const campaignService = {
   remove: async (id: string): Promise<void> => {
     await axiosClient.delete(`/campaigns/${id}`);
   },
-  overview: async (): Promise<Campaign[]> => {
-    const response = await axiosClient.get<ApiResponsePage<Campaign>>(
-      "/campaigns/overview",
-    );
-    return response?.data?.data;
+  overview: async (params: { page?: number; size?: number } = { size: 200 }): Promise<Campaign[]> => {
+    const { data } = await axiosClient.get<unknown>("/campaigns/overview", { params });
+    return unwrapPage(data).content;
   },
 };
 

@@ -1,5 +1,5 @@
 import { Button, Table } from 'antd';
-import { useModal } from '../../hooks/useModal';
+import { useModal } from '../../../hooks/useModal';
 import { DetailCampaignModal } from './DetailCampaignModal';
 const dataSource = [
     {

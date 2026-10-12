@@ -1,11 +1,7 @@
-export interface Permission {
+export type Permission = {
   id?: number;
   name: string;
   code: string;
-  /** e.g. USER, ROLE, DASHBOARD */
-  resource?: string;
-  /** e.g. CREATE, READ, UPDATE, DELETE */
-  action?: string;
   url?: string;
   canView?: boolean;
   canCreate?: boolean;
@@ -15,7 +11,8 @@ export interface Permission {
   canWrite?: boolean;
   objectId?: number;
   menuUri?: string;
-}
+  roleId?: string;
+};
 
 type Action = {
   canView: boolean;

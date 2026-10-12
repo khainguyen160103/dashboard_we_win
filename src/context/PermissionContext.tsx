@@ -26,11 +26,13 @@ export function PermissionProvider({children}: AuthProviderProps) {
                 setLoading(true);
                 setError('');
                 try {
-                    const data = await permissionService.getUserPermissions(user.id);
+                    const data = await permissionService.getMyPermissions();
                     console.log("Fetched permissions:", data);
                     localStorageUtils.setItem(keyStore.PERMISSIONS, data)
                     // setPermissions(data);
-                } catch (err) {
+                } catch {
+                    // Không giữ lại quyền của tài khoản đăng nhập trước đó (vd. Admin) -> không có menu nào
+                    localStorageUtils.setItem(keyStore.PERMISSIONS, {})
                     setError('Failed to fetch permissions');
                 } finally {
                     setLoading(false);

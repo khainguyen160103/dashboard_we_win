@@ -26,6 +26,7 @@ import {
   DollarCircleOutlined,
 } from "@ant-design/icons";
 import type { Brand } from "./types";
+import { useCampaigns } from "../../feature/campaign/hook/useCampaignQuery";
 import { INDUSTRY_COLORS, TIER_COLORS, STATUS_COLORS, STATUS_LABELS, formatVND } from "./brand.data";
 
 interface BrandDetailDrawerProps {
@@ -37,40 +38,23 @@ interface BrandDetailDrawerProps {
 
 const { Text, Paragraph } = Typography;
 
-// Mock campaign history linked to brands
-const MOCK_CAMPAIGN_HISTORY: Record<number, { name: string; status: string; budget: number; date: string }[]> = {
-  1: [
-    { name: "Summer Glow 2024", status: "Completed", budget: 120_000_000, date: "2024-08-31" },
-    { name: "Tết Beauty 2025", status: "Completed", budget: 200_000_000, date: "2025-02-10" },
-    { name: "Summer Fresh 2025", status: "Active", budget: 180_000_000, date: "2025-07-01" },
-  ],
-  2: [
-    { name: "Galaxy S24 Launch", status: "Completed", budget: 500_000_000, date: "2024-04-15" },
-    { name: "Back to School 2024", status: "Completed", budget: 300_000_000, date: "2024-09-15" },
-    { name: "Galaxy AI Campaign", status: "Active", budget: 450_000_000, date: "2025-06-01" },
-  ],
-  3: [
-    { name: "Flash Deal Week May", status: "Completed", budget: 80_000_000, date: "2024-05-07" },
-    { name: "Highlands Summer Vibes", status: "Active", budget: 120_000_000, date: "2025-07-15" },
-  ],
-  6: [
-    { name: "Tết 2024 – Vinamilk Xanh", status: "Completed", budget: 650_000_000, date: "2024-02-05" },
-    { name: "Summer Refreshment", status: "Completed", budget: 380_000_000, date: "2024-08-20" },
-    { name: "Back to School Milk", status: "Active", budget: 240_000_000, date: "2025-07-01" },
-    { name: "Tết 2025 – Chào Năm Mới", status: "Active", budget: 420_000_000, date: "2025-02-01" },
-  ],
-  11: [
-    { name: "11.11 Shopee Sale", status: "Completed", budget: 900_000_000, date: "2024-11-11" },
-    { name: "12.12 Siêu Sale", status: "Completed", budget: 850_000_000, date: "2024-12-12" },
-    { name: "Flash Deal 2025", status: "Active", budget: 600_000_000, date: "2025-06-15" },
-  ],
-};
-
 export function BrandDetailDrawer({ open, brand, onClose, onEdit }: BrandDetailDrawerProps) {
+  // Chiến dịch mà brand được gắn vào (user_campaign.user_id = brand_id)
+  const historyQ = useCampaigns(
+    { memberUserId: brand ? String(brand.id) : undefined, size: 50 },
+    { enabled: open && Boolean(brand) },
+  );
   if (!brand) return null;
 
-  const campaignHistory = MOCK_CAMPAIGN_HISTORY[Number(brand.id)] ?? [];
-  const statusColorMap: Record<string, string> = { Active: "blue", Completed: "green", Draft: "orange" };
+  const campaignHistory = historyQ.data?.content ?? [];
+  const statusColorMap: Record<string, string> = {
+    ACTIVATE: "blue",
+    ACTIVE: "blue",
+    DONE: "green",
+    DRAFT: "orange",
+    PENDING: "gold",
+    WARNING: "red",
+  };
 
   const avatarInitials = brand.name
     .split(" ")
@@ -198,7 +182,9 @@ export function BrandDetailDrawer({ open, brand, onClose, onEdit }: BrandDetailD
       )}
 
       <Divider>Lịch sử chiến dịch</Divider>
-      {campaignHistory.length === 0 ? (
+      {historyQ.isLoading ? (
+        <Text type="secondary">Đang tải…</Text>
+      ) : campaignHistory.length === 0 ? (
         <Text type="secondary">Chưa có chiến dịch nào.</Text>
       ) : (
         <Timeline
@@ -209,8 +195,9 @@ export function BrandDetailDrawer({ open, brand, onClose, onEdit }: BrandDetailD
                 <div style={{ fontWeight: 600 }}>{c.name}</div>
                 <div style={{ fontSize: 12, color: "#8c8c8c" }}>
                   <Tag color={statusColorMap[c.status] ?? "default"} style={{ marginRight: 8 }}>{c.status}</Tag>
-                  Ngân sách: <strong style={{ color: "#1890ff" }}>{formatVND(c.budget)} ₫</strong>
-                  {" · "}{new Date(c.date).toLocaleDateString("vi-VN")}
+                  {c.startTime ? new Date(c.startTime).toLocaleDateString("vi-VN") : "—"}
+                  {" – "}
+                  {c.endTime ? new Date(c.endTime).toLocaleDateString("vi-VN") : "—"}
                 </div>
               </div>
             ),

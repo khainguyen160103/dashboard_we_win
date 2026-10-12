@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import kocService from "../../services/koc.service";
-import type { KocListParams, KocRequest } from "../../model/Koc";
+import kocService from "../../feature/koc/service/koc.service";
+import type { KocListParams, KocRequest } from "../../feature/koc/model/Koc";
 import { queryKeys } from "./queryKeys";
 
-
+// export const
 export const useKoc = (
   params?: KocListParams,
   options?: { enabled?: boolean },

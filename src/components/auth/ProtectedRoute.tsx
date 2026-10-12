@@ -7,9 +7,15 @@ type ProtectedRouteProps = {
   children?: ReactNode;
 };
 
-/** Role KOC / BRAND chỉ được xem đúng /dashboard (Cổng KOC / Cổng Brand). */
-const DASHBOARD_ONLY_ROLES = ["KOC", "BRAND"] as const;
-const ALLOWED_PATHS_FOR_RESTRICTED = ["/dashboard"];
+/**
+ * Role bị giới hạn trang được vào (path đầu tiên = trang chủ của role):
+ *  - KOC   : Cổng KOC ở /dashboard
+ *  - BRAND : chỉ menu "Vận hành chiến dịch" (/campaign hiển thị Cổng Brand)
+ */
+const RESTRICTED_PATHS: Record<string, string[]> = {
+  KOC: ["/dashboard"],
+  BRAND: ["/campaign"],
+};
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { checkAuth, user } = authStore();
@@ -27,9 +33,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   const role = getActiveUserRole(user);
-  const restricted = (DASHBOARD_ONLY_ROLES as readonly string[]).includes(role);
-  if (restricted && !ALLOWED_PATHS_FOR_RESTRICTED.includes(location.pathname)) {
-    return <Navigate to="/dashboard" replace />;
+  const allowed = RESTRICTED_PATHS[role];
+  if (allowed && !allowed.includes(location.pathname)) {
+    return <Navigate to={allowed[0]} replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

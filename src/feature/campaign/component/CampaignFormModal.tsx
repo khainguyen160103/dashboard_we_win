@@ -1,8 +1,8 @@
 import { DatePicker, Form, Input, InputNumber, Modal, Row, Col, Select, Tooltip } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import type { Campaign, CampaignFormValues } from "./types";
-import { CATEGORY_OPTIONS } from "./campaign.utils";
+import type { Campaign, CampaignFormValues } from "../model/types";
+import { CATEGORY_OPTIONS } from "../utils/campaign.utils";
 import { useState } from "react";
 
 interface CampaignFormModalProps {

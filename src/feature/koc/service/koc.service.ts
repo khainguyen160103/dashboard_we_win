@@ -1,7 +1,6 @@
-import { api as axiosClient } from "../api/request";
-import type { KocDto, KocListParams, KocRequest } from "../model/Koc";
+import { api as axiosClient } from "../../../api/request";
+import type { KocDto, KocListParams, KocRequest, KocView as Koc } from "../model/Koc";
 import { mapKocDtoToKoc } from "../model/Koc";
-import type { Koc } from "../model/User";
 
 // baseURL đã là `${VITE_BASE_URL}` = http://localhost:8080/api -> chỉ cần `/kocs`
 // Controller: campaign-service `KocController` @RequestMapping("/api/kocs")
@@ -16,14 +15,26 @@ export type KocPage = {
   last: boolean;
 };
 
-/** Gỡ lớp bọc `ApiResponse` / `PageResponse` để lấy mảng KocDto. */
+/**
+ * `GET /kocs` trả về:
+ *   { success, message, data: { data: KocDto[], page, size, totalElements, totalPages, last } }
+ * -> mảng nằm ở `data.data`, metadata phân trang nằm ở `data`.
+ * Vẫn nhận các biến thể cũ (`data.content`, `content`, mảng trần) cho chắc.
+ */
 const unwrapList = (data: unknown): KocDto[] => {
   const d = data as any;
   if (Array.isArray(d)) return d;
+  if (Array.isArray(d?.data?.data)) return d.data.data;
   if (Array.isArray(d?.data?.content)) return d.data.content;
   if (Array.isArray(d?.content)) return d.content;
   if (Array.isArray(d?.data)) return d.data;
   return [];
+};
+
+/** Object chứa metadata phân trang (`page`, `size`, `totalElements`…). */
+const pageMetaOf = (data: unknown) => {
+  const d = data as any;
+  return (d?.data && !Array.isArray(d.data) ? d.data : d) ?? {};
 };
 
 const unwrapOne = (data: unknown): KocDto => {
@@ -32,23 +43,24 @@ const unwrapOne = (data: unknown): KocDto => {
 };
 
 export const kocService = {
+  /** `GET /kocs` -> 1 trang KOC (mặc định BE trả 20 dòng) đã map sang shape UI. */
   list: async (params?: KocListParams): Promise<Koc[]> => {
-    const { data } = await axiosClient.get(BASE, { params });
-    console.log("kocService.list data", data);
+    const { data } = await axiosClient.get<unknown>(BASE, { params });
     return unwrapList(data).map(mapKocDtoToKoc);
   },
 
-  /** Như `list` nhưng giữ lại metadata phân trang từ `PageResponse`. */
+  /** Như `list` nhưng kèm metadata phân trang — dùng cho bảng có phân trang server. */
   page: async (params?: KocListParams): Promise<KocPage> => {
-    const { data } = await axiosClient.get(BASE, { params });
-    const raw = ((data as any)?.data ?? data) as any;
+    const { data } = await axiosClient.get<unknown>(BASE, { params });
+    const meta = pageMetaOf(data);
+    const content = unwrapList(data).map(mapKocDtoToKoc);
     return {
-      content: unwrapList(data).map(mapKocDtoToKoc),
-      page: raw?.page ?? params?.page ?? 0,
-      size: raw?.size ?? params?.size ?? 20,
-      totalElements: raw?.totalElements ?? 0,
-      totalPages: raw?.totalPages ?? 0,
-      last: raw?.last ?? true,
+      content,
+      page: meta.page ?? params?.page ?? 0,
+      size: meta.size ?? params?.size ?? content.length,
+      totalElements: meta.totalElements ?? content.length,
+      totalPages: meta.totalPages ?? 1,
+      last: meta.last ?? true,
     };
   },
 

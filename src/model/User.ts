@@ -15,7 +15,7 @@ export type User = {
   // Status
   status: string;
   version?: number;
-
+  roleName: string;
   // Optional profile fields (may not always be returned)
   passwordHash?: string;
   zalo?: string;

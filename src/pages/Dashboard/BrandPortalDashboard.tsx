@@ -1,69 +1,55 @@
 import { useMemo, useState } from "react";
-import { Alert, Button, Empty, Modal, Select, Spin, Table, Tag, Typography, message } from "antd";
+import { Button, Empty, Modal, Select, Spin, Table, Tag, Typography, message } from "antd";
 import type { TableColumnsType } from "antd";
 import { authStore } from "../../store/authStore";
-import { useCampaigns } from "../../hooks/query/useCampaignQuery";
+import { useCampaigns } from "../../feature/campaign/hook/useCampaignQuery";
 import {
   useCampaignKocsQuery,
   useUpdateCampaignKocMutation,
-} from "../../hooks/query/useCampaignKocQuery";
-import { useJobsQuery } from "../../hooks/query/useJobQuery";
+} from "../../feature/campaign/hook/useCampaignKocQuery";
+import { useVideosQuery } from "../../feature/campaign/hook/useVideoQuery";
 import {
   CAMPAIGN_KOC_STATUS_LABEL,
   CAMPAIGN_KOC_STATUS_COLOR,
   type CampaignKocDto,
-} from "../../model/CampaignKoc";
+} from "../../feature/campaign/model/CampaignKoc";
 import { fmtNum, fmtVnd, PanelCard, StatTile } from "./_shared";
-import {
-  MOCK_CAMPAIGN_KOCS,
-  MOCK_CAMPAIGNS,
-  MOCK_JOBS,
-  withFallback,
-} from "./mockData";
-import { CampaignVideoPanel } from "../../components/campaign/CampaignExtraPanels";
-import { VIDEO_BRANDS } from "../../components/campaign/campaignVideo.mock";
+import { CampaignVideoPanel } from "../../feature/campaign/component/CampaignExtraPanels";
 
 const { Title, Text } = Typography;
 
-const isActive = (s?: string) => String(s ?? "").toUpperCase() === "ACTIVE";
+const isActive = (s?: string) => ["ACTIVE", "ACTIVATE"].includes(String(s ?? "").toUpperCase());
 const isDone = (s?: string) => ["DONE", "COMPLETED"].includes(String(s ?? "").toUpperCase());
-const vStatus = (j: any) => String(j.videoStatus || j.status || "").toUpperCase();
 
 type CampaignRow = {
   id: string;
   name: string;
-  brandName?: string;
+  brandName?: string | null;
   status?: string;
-  startTime?: string;
-  endTime?: string;
-  targetTotalKoc?: number;
+  startTime?: string | Date | null;
+  endTime?: string | Date | null;
+  targetTotalKoc?: number | null;
 };
 
 export default function BrandPortalDashboard() {
   const user = authStore((s) => s.user);
-  const campaignsQ = useCampaigns({ limit: 200 });
-  const jobsQ = useJobsQuery(undefined, { enabled: true });
-
-  const cf = useMemo(() => withFallback<CampaignRow>(campaignsQ, MOCK_CAMPAIGNS), [campaignsQ.data, campaignsQ.isError, campaignsQ.isLoading]);
-  const jf = useMemo(() => withFallback<any>(jobsQ, MOCK_JOBS), [jobsQ.data, jobsQ.isError, jobsQ.isLoading]);
-  const campaigns = cf.rows;
-  const jobs = jf.rows;
+  // Chỉ các chiến dịch mà nhãn hàng (user đang đăng nhập) được gắn vào
+  const campaignsQ = useCampaigns({ size: 200, mine: true });
+  const campaigns: CampaignRow[] = campaignsQ.data?.content ?? [];
 
   const activeCampaigns = campaigns.filter((c) => isActive(c.status));
   const doneCampaigns = campaigns.filter((c) => isDone(c.status));
 
   const [campaignId, setCampaignId] = useState<string>();
-  const [brandView, setBrandView] = useState<string>(VIDEO_BRANDS[0]);
   const selectedId = campaignId ?? (activeCampaigns[0]?.id ?? campaigns[0]?.id);
 
   const kocsQ = useCampaignKocsQuery(selectedId, { enabled: Boolean(selectedId) });
-  const kf = useMemo(() => withFallback(kocsQ, MOCK_CAMPAIGN_KOCS), [kocsQ.data, kocsQ.isError, kocsQ.isLoading]);
-  const kocs = kf.rows;
-  const usingMock = cf.usingMock || jf.usingMock || kf.usingMock;
+  const kocs = useMemo<CampaignKocDto[]>(() => kocsQ.data ?? [], [kocsQ.data]);
+  const videosQ = useVideosQuery({ campaignId: selectedId }, { enabled: Boolean(selectedId) });
   const updateMut = useUpdateCampaignKocMutation(selectedId ?? "");
 
   const pendingReview = kocs.filter((k) => k.status === "BRAND_REVIEW");
-  const videoPendingBrand = jobs.filter((j) => ["CHO_PM_DUYET", "PENDING"].includes(vStatus(j))).length;
+  const videoPendingBrand = (videosQ.data ?? []).filter((v) => v.status === "BRAND_REVIEW").length;
 
   const decide = (r: CampaignKocDto, action: "approve" | "reject" | "hold") => {
     if (action === "reject") {
@@ -158,13 +144,6 @@ export default function BrandPortalDashboard() {
           </Text>
         </div>
 
-        {usingMock && (
-          <Alert
-            type="warning"
-            showIcon
-            message="Đang hiển thị dữ liệu mẫu — chưa kết nối được máy chủ."
-          />
-        )}
 
         {/* Tier 1 */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -180,7 +159,7 @@ export default function BrandPortalDashboard() {
             label="Video chờ Brand duyệt"
             value={videoPendingBrand}
             tone="text-amber-500"
-            sub="Đã qua WeWin duyệt sơ bộ"
+            sub="Chiến dịch đang chọn · đã qua WeWin duyệt sơ bộ"
           />
         </div>
 
@@ -286,25 +265,7 @@ export default function BrandPortalDashboard() {
 
         {/* Duyệt video KOC — cùng luồng hiển thị với "Job & Duyệt Video" ở Vận hành chiến dịch,
             giới hạn theo các chiến dịch nhãn hàng của bạn tham gia. */}
-        <div>
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <Title level={4} className="!mb-0">
-                Duyệt video KOC
-              </Title>
-              <Text type="secondary">
-                Toàn bộ video KOC upload ở các chiến dịch nhãn hàng của bạn — xem, duyệt hoặc yêu cầu sửa
-              </Text>
-            </div>
-            <Select
-              style={{ minWidth: 220 }}
-              value={brandView}
-              onChange={setBrandView}
-              options={VIDEO_BRANDS.map((b) => ({ value: b, label: b }))}
-            />
-          </div>
-          <CampaignVideoPanel brandName={brandView} canBrandApprove />
-        </div>
+        <CampaignVideoPanel mode="brand" campaignId={selectedId} />
 
         {/* Tier 5 · Lịch sử */}
         <PanelCard title="Lịch sử chiến dịch đã triển khai" subtitle={`${doneCampaigns.length} chiến dịch`}>
