@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
 import {
+  BoxCubeIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
@@ -38,12 +39,12 @@ const allNavItems: NavItem[] = [
       path: "/brand",
 
     },
-  // {
-  //   icon: <BoxCubeIcon />,
-  //   name: "Vận hành chiến dịch",
-  //   path: "/campaigns",
+  {
+    icon: <BoxCubeIcon />,
+    name: "Vận hành chiến dịch",
+    path: "/campaigns",
 
-  // },
+  },
 
     {
       icon: <UserCircleIcon />,

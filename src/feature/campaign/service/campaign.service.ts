@@ -1,5 +1,6 @@
 import { api as axiosClient } from "../api/request";
 import type { Campaign, CampaignRequest } from "../model/Campaign";
+import { ApiResponsePage } from "../model/request";
 
 export type CampaignPayload = CampaignRequest;
 
@@ -12,12 +13,6 @@ export type CampaignPage = {
   last: boolean;
 };
 
-/**
- * BE có thể trả nhiều hình dạng khác nhau tuỳ endpoint/version:
- * `{data: {content, totalElements,...}}`, `{content,...}` hoặc mảng thuần.
- * Luôn chuẩn hoá về 1 dạng duy nhất ở đây để UI không phải đoán/tự unwrap
- * (tránh crash "Cannot read properties of undefined (reading 'content')").
- */
 const unwrapPage = (data: unknown): CampaignPage => {
   const d = data as any;
   const page = d?.data ?? d;
@@ -77,6 +72,12 @@ export const campaignService = {
 
   remove: async (id: string): Promise<void> => {
     await axiosClient.delete(`/campaigns/${id}`);
+  },
+  overview: async (): Promise<Campaign[]> => {
+    const response = await axiosClient.get<ApiResponsePage<Campaign>>(
+      "/campaigns/overview",
+    );
+    return response?.data?.data;
   },
 };
 

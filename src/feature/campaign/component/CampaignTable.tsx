@@ -67,8 +67,8 @@ export function CampaignTable({ campaigns, onEdit }: CampaignTableProps) {
     },
     {
       title: "KOC tham gia",
-      dataIndex: "kocCount",
-      key: "kocCount",
+      dataIndex: "targetTotalKoc",
+      key: "targetTotalKoc",
       width: 120,
       align: "center",
     },
